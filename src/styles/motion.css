@@ -1,0 +1,384 @@
+/* ------------------------------------------------------------------ */
+/* Transitions de page (View Transitions d'Astro)                      */
+/* ------------------------------------------------------------------ */
+@keyframes vt-leave {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes vt-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+::view-transition-old(root) {
+  animation: vt-leave 200ms ease both;
+}
+
+::view-transition-new(root) {
+  animation: vt-enter 460ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ------------------------------------------------------------------ */
+/* En-tête : deux variantes (opaque / posée sur l'image)               */
+/* ------------------------------------------------------------------ */
+:root {
+  /* Hauteur de l'en-tête : valeur de repli avant la mesure JS (voir Header.astro). */
+  --header-h: 6rem;
+}
+
+.site-header {
+  --header-fg: var(--color-ink);
+  --header-fg-muted: var(--color-clay);
+  --header-bg: rgb(var(--tw-canvas) / 0.9);
+  --header-border: rgb(var(--tw-ink) / 0.1);
+  /* Fixe plein largeur : la barre et le bouton burger restent visibles au scroll. */
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  z-index: 50;
+  color: var(--header-fg);
+  background-color: var(--header-bg);
+  border-bottom: 1px solid var(--header-border);
+  backdrop-filter: blur(10px);
+  transition:
+    background-color 500ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 500ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 500ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Accueil : l'en-tête flotte au-dessus de l'image plein écran */
+.site-header--overlay {
+  position: fixed;
+  left: 0;
+  right: 0;
+  background-color: transparent;
+  border-bottom-color: transparent;
+  backdrop-filter: none;
+  --header-fg: #fff;
+  --header-fg-muted: rgb(255 255 255 / 0.8);
+}
+
+/* Dès que l'on quitte le haut de page, l'en-tête redevient lisible */
+.site-header--overlay[data-scrolled='true'] {
+  background-color: rgb(var(--tw-canvas) / 0.92);
+  border-bottom-color: rgb(var(--tw-ink) / 0.1);
+  backdrop-filter: blur(10px);
+  --header-fg: var(--color-ink);
+  --header-fg-muted: var(--color-clay);
+}
+
+.site-header .nav-link {
+  color: var(--header-fg-muted);
+  transition: color 300ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.site-header .nav-link:hover,
+.site-header .nav-link[aria-current='page'],
+.site-header .menu-toggle:hover {
+  color: var(--header-fg);
+}
+
+.site-header .nav-link[aria-current='page'] {
+  text-decoration-line: underline;
+  text-decoration-color: currentColor;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 6px;
+}
+
+.site-header .menu-toggle {
+  position: relative;
+  z-index: 60;
+  color: var(--header-fg);
+  border-color: color-mix(in srgb, currentColor 30%, transparent);
+  transition: border-color 300ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/*
+ * Bouton burger : trois barres + « Menu » à l'état fermé, croix + « Fermer »
+ * dès que le menu est ouvert — la fermeture devient immédiate à comprendre.
+ * Bascule en CSS seul, pilotée par `details[open]`.
+ */
+.site-header .menu-icon--close,
+.site-header .menu-label--close {
+  display: none;
+}
+
+details[data-mobile-menu][open] .menu-icon--burger,
+details[data-mobile-menu][open] .menu-label--burger {
+  display: none;
+}
+
+details[data-mobile-menu][open] .menu-icon--close,
+details[data-mobile-menu][open] .menu-label--close {
+  display: inline-block;
+}
+
+/* L'en-tête portant le <details> ouvert : le panneau passe sous la barre cliquable */
+details[data-mobile-menu][open] .mobile-panel {
+  z-index: 40;
+}
+
+.site-header .brand-sub {
+  color: var(--header-fg-muted);
+}
+
+/*
+ * En-tête fixe : réserve sa hauteur en haut du contenu pour que rien
+ * ne passe dessous. L'accueil (variante `overlay` sur hero plein écran)
+ * n'a pas besoin de cette réserve.
+ */
+.site-layer > main {
+  padding-top: var(--header-h);
+}
+
+.site-layer:has(> .site-header--overlay) > main {
+  padding-top: 0;
+}
+
+/*
+ * Menu mobile ouvert : le flou est coupé et le fond devient opaque.
+ * Sans cela, le `backdrop-filter` transformerait le panneau `fixed`
+ * en repère local à l'en-tête et le menu serait coupé en haut.
+ */
+.site-header:has(details[data-mobile-menu][open]) {
+  backdrop-filter: none;
+  background-color: rgb(var(--tw-canvas) / 1);
+  --header-fg: var(--color-ink);
+  --header-fg-muted: var(--color-clay);
+}
+
+/*
+ * Logo : le tracé original sert de MASQUE, peint dans la couleur courante
+ * (`currentColor`) — donc gris des textes sur fond blanc, et blanc automatique
+ * posé sur l'image de l'accueil (l'en-tête change sa couleur de texte, le logo
+ * suit sans règle supplémentaire).
+ */
+.brand-logo {
+  display: block;
+  aspect-ratio: 640 / 592;
+  background-color: var(--color-clay);
+  -webkit-mask: url('/images/logo.webp') no-repeat center / contain;
+  mask: url('/images/logo.webp') no-repeat center / contain;
+  transition: background-color 500ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Accueil en haut de page : l'en-tête est posée sur l'image, le logo suit la couleur claire. */
+.site-header--overlay[data-scrolled='false'] .brand-logo {
+  background-color: currentColor;
+}
+
+/* ------------------------------------------------------------------ */
+/* Sélecteur de langue (FR / EN) — haut à droite                       */
+/* ------------------------------------------------------------------ */
+.site-header .lang-switch {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--header-fg);
+}
+
+.site-header .lang-switch a {
+  color: var(--header-fg-muted);
+  transition: color 300ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.site-header .lang-switch a:hover,
+.site-header .lang-switch a[aria-current='true'] {
+  color: var(--header-fg);
+}
+
+.site-header .lang-switch a[aria-current='true'] {
+  text-decoration: underline;
+  text-underline-offset: 5px;
+}
+
+.site-header .lang-switch > span {
+  color: var(--header-fg-muted);
+  opacity: 0.45;
+}
+
+/* ------------------------------------------------------------------ */
+/* Menu mobile : panneau centré, plein largeur, sous l'en-tête         */
+/* ------------------------------------------------------------------ */
+@keyframes menu-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+.mobile-panel {
+  /*
+   * Panneau plein écran centré : occupe tout l'espace sous l'en-tête,
+   * liens centrés verticalement et horizontalement — lisible et accessible,
+   * y compris par-dessus l'image plein écran de l'accueil.
+   */
+  position: fixed;
+  top: var(--header-h, 6rem);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem 3.5rem;
+  overflow-y: auto;
+  background-color: var(--color-canvas);
+  border-top: 1px solid rgb(var(--tw-ink) / 0.08);
+  animation: menu-drop 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.mobile-panel ul {
+  width: 100%;
+  max-width: 26rem;
+}
+
+.mobile-panel a {
+  display: block;
+  padding: 1.05rem 1.5rem;
+  text-align: center;
+  font-size: 1.25rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-clay);
+  transition:
+    color 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 300ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.mobile-panel a:hover,
+.mobile-panel a[aria-current='page'] {
+  color: var(--color-ink);
+  background-color: rgb(var(--tw-ink) / 0.05);
+}
+
+.mobile-panel li + li {
+  border-top: 1px solid rgb(var(--tw-ink) / 0.08);
+}
+
+.menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background-color: rgb(var(--tw-ink) / 0.28);
+  backdrop-filter: blur(2px);
+  animation: menu-drop 300ms ease reverse both;
+}
+
+/* ------------------------------------------------------------------ */
+/* Hero plein écran                                                    */
+/* ------------------------------------------------------------------ */
+.hero-full {
+  height: 100vh;
+  height: 100svh;
+  min-height: 32rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* Apparitions douces du contenu                                       */
+/* ------------------------------------------------------------------ */
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+
+.work-card {
+  animation: card-in 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--card-delay, 0ms);
+}
+
+/* Œuvres non encore affichées (voir WorksExplorer) */
+.is-deferred {
+  display: none;
+}
+
+/* Images : fondu à l'arrivée (évite l'apparition brutale) */
+img[data-fade] {
+  opacity: 0;
+  transition: opacity 600ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+img[data-fade].is-loaded {
+  opacity: 1;
+}
+
+/* ------------------------------------------------------------------ */
+/* Transitions Vue (filtres de la grille + visionneuse)                */
+/* ------------------------------------------------------------------ */
+.grid-move,
+.grid-enter-active,
+.grid-leave-active {
+  transition:
+    opacity 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.grid-enter-from,
+.grid-leave-to {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+.grid-leave-active {
+  position: absolute;
+}
+
+.viewer-enter-active,
+.viewer-leave-active {
+  transition: opacity 300ms ease;
+}
+
+.viewer-enter-from,
+.viewer-leave-to {
+  opacity: 0;
+}
+
+.viewer-enter-active img {
+  animation: viewer-zoom 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes viewer-zoom {
+  from {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Mouvement réduit : on coupe toutes les animations décoratives       */
+/* ------------------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root),
+  .site-header,
+  .mobile-panel,
+  .menu-backdrop,
+  .work-card,
+  .viewer-enter-active,
+  .viewer-leave-active,
+  .grid-move,
+  .grid-enter-active,
+  .grid-leave-active,
+  .viewer-enter-active img {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  img[data-fade] {
+    opacity: 1;
+    transition: none;
+  }
+}
+

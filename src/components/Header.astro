@@ -1,0 +1,187 @@
+---
+/**
+ * En-tête du site : signature de l'artiste + navigation.
+ *
+ * Deux variantes :
+ *  - `solid`   : fond de toile, collant en haut de page (pages intérieures) ;
+ *  - `overlay` : transparent, posé sur l'image plein écran (accueil), rendu
+ *    automatiquement opaque dès que l'on descend dans la page.
+ *
+ * Mobile-first : liens horizontaux dès md, panneau plein écran centré en dessous.
+ */
+import { type Locale, ui, withLocale } from '../lib/i18n';
+
+interface Props {
+  siteName?: string;
+  tagline?: string;
+  variant?: 'solid' | 'overlay';
+  /** Langue courante : pilote les libellés et le sélecteur FR / EN. */
+  locale?: Locale;
+}
+
+const {
+  siteName = 'Yann Jaime',
+  tagline = 'Peintre',
+  variant = 'solid',
+  locale = 'fr',
+} = Astro.props;
+
+const t = ui[locale];
+
+const links = [
+  { href: withLocale('/', locale), label: t.nav.home, match: '/' },
+  { href: withLocale('/oeuvres', locale), label: t.nav.works, match: '/oeuvres' },
+  { href: withLocale('/expositions', locale), label: t.nav.expositions, match: '/expositions' },
+  { href: withLocale('/a-propos', locale), label: t.nav.about, match: '/a-propos' },
+  { href: withLocale('/contact', locale), label: t.nav.contact, match: '/contact' },
+];
+
+/*
+ * Chemin SANS préfixe `/en` : l'état « page courante » ne dépend pas de la
+ * langue, et les deux liens du sélecteur (même page, autre langue) en découlent.
+ */
+const pathname = Astro.url.pathname.replace(/^\/en(?=\/|$)/, '') || '/';
+const isActive = (match: string) =>
+  match === '/' ? pathname === '/' : pathname.startsWith(match);
+
+const frPath = pathname;
+const enPath = withLocale(pathname, 'en');
+---
+
+<header
+  class:list={['site-header', variant === 'overlay' && 'site-header--overlay']}
+  data-header
+  data-scrolled="false"
+>
+  <nav
+    class="mx-auto flex max-w-gallery items-center justify-between gap-4 px-4 py-2.5 sm:px-8 lg:py-3"
+    aria-label="Navigation principale"
+  >
+    <a href="/" class="flex items-center gap-3 leading-none" aria-label={`${siteName} — retour à l’accueil`}>
+      <!--
+        Logo : le tracé original (PNG détouré) sert de masque et prend la
+        couleur courante de l'en-tête — gris des textes sur fond blanc,
+        blanc posé sur l'image de l'accueil.
+      -->
+      <span class="brand-logo h-12 w-auto lg:h-14" role="img" aria-label={siteName}></span>
+      <span class="brand-sub eyebrow hidden text-sm xl:block xl:text-base">{tagline}</span>
+    </a>
+
+    <div class="flex items-center gap-4 md:gap-6">
+    <!-- Navigation desktop -->
+    <!--
+      Tailles échelonnées : md (16px) → lg (18px) → xl (20px). `whitespace-nowrap`
+      hérité interdit le repli d'un libellé (« À propos ») sur deux lignes dans la
+      zone 1024-1199 px, où la place est la plus juste avec le logo agrandi.
+    -->
+    <ul
+      class="hidden items-center gap-5 whitespace-nowrap text-xs uppercase tracking-[0.16em] md:flex lg:gap-6 lg:text-sm lg:tracking-[0.18em] xl:gap-9 xl:text-base xl:tracking-[0.2em]"
+    >
+      {
+        links.map((l) => (
+          <li>
+            <a href={l.href} class="nav-link" aria-current={isActive(l.match) ? 'page' : undefined}>
+              {l.label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+
+    <!-- Sélecteur de langue : visible en permanence, en haut à droite -->
+    <div class="lang-switch" role="group" aria-label={t.langSwitch.label}>
+      <a href={frPath} lang="fr" hreflang="fr" aria-current={locale === 'fr' ? 'true' : undefined}>Fr</a>
+      <span aria-hidden="true">/</span>
+      <a href={enPath} lang="en" hreflang="en" aria-current={locale === 'en' ? 'true' : undefined}>En</a>
+    </div>
+
+    <!-- Menu mobile -->
+    <details class="relative md:hidden" data-mobile-menu>
+      <summary
+        class="menu-toggle flex cursor-pointer list-none items-center gap-2.5 rounded-full border px-4 py-2.5 text-[0.82rem] uppercase tracking-[0.22em]"
+      >
+        <!--
+          État fermé : trois barres + « Menu ». État ouvert : croix + « Fermer ».
+          La bascule est faite en CSS via `details[open]` (voir motion.css) : aucun
+          JS supplémentaire, et le libellé visible change avec l'état, ce qui donne
+          son nom accessible au bouton (l'état ouvert/fermé est déjà exposé par
+          <details>/<summary>).
+        -->
+        <span class="menu-icon menu-icon--burger flex h-3 w-4 flex-col justify-between" aria-hidden="true">
+          <span class="h-px w-full bg-current"></span>
+          <span class="h-px w-full bg-current"></span>
+          <span class="h-px w-full bg-current"></span>
+        </span>
+        <svg
+          class="menu-icon menu-icon--close"
+          width="15"
+          height="15"
+          viewBox="0 0 15 15"
+          fill="none"
+          aria-hidden="true"
+        >
+          <path d="M2 2 13 13M13 2 2 13" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"
+          ></path>
+        </svg>
+        <span class="menu-label menu-label--burger">Menu</span>
+        <span class="menu-label menu-label--close">Fermer</span>
+      </summary>
+
+      <!-- Voile sur la page + panneau centré -->
+      <div class="menu-backdrop" aria-hidden="true"></div>
+      <div class="mobile-panel">
+        <ul>
+          {
+            links.map((l) => (
+              <li>
+                <a href={l.href} aria-current={isActive(l.match) ? 'page' : undefined}>
+                  {l.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </details>
+    </div>
+  </nav>
+</header>
+
+<script>
+  /*
+   * Comportements de l'en-tête : ce script est un module exécuté une seule fois
+   * par document, les écouteurs sont donc posés globalement (pas d'accumulation
+   * lors des transitions de page) et retrouvent l'en-tête courant à chaque fois.
+   */
+
+  /** En-tête transparent → opaque dès que l'on quitte le haut de page. */
+  const syncHeader = () => {
+    const header = document.querySelector<HTMLElement>('header[data-header]');
+    if (!header) return;
+    header.dataset.scrolled = window.scrollY > 48 ? 'true' : 'false';
+
+    // Hauteur réelle de l'en-tête : positionne le panneau du menu mobile juste dessous.
+    document.documentElement.style.setProperty('--header-h', `${header.offsetHeight}px`);
+  };
+
+  window.addEventListener('scroll', syncHeader, { passive: true });
+  window.addEventListener('resize', syncHeader, { passive: true });
+  document.addEventListener('astro:page-load', syncHeader);
+
+  // Fermeture au clic à l'extérieur puis à la touche Échap (accessibilité clavier).
+  document.addEventListener('click', (event) => {
+    const menu = document.querySelector<HTMLDetailsElement>('details[data-mobile-menu][open]');
+    if (!menu) return;
+    if (!menu.contains(event.target as Node)) menu.open = false;
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    const menu = document.querySelector<HTMLDetailsElement>('details[data-mobile-menu][open]');
+    if (!menu) return;
+    menu.open = false;
+    menu.querySelector<HTMLElement>('summary')?.focus();
+  });
+
+  syncHeader();
+</script>

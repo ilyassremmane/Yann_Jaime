@@ -1,0 +1,152 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getAbout, paragraphs } from '../lib/content';
+import { type Locale, ui, withLocale } from '../lib/i18n';
+
+interface Props {
+  /** `fr` par défaut ; la version anglaise passe `locale="en"` (voir /en/). */
+  locale?: Locale;
+}
+
+const locale: Locale = Astro.props.locale ?? 'fr';
+const t = ui[locale];
+
+const about = await getAbout(locale);
+const bio = paragraphs(about.bio);
+
+const cvSections = [
+  { title: t.aboutPage.awards, items: about.awards },
+  { title: t.aboutPage.training, items: about.training },
+  { title: t.aboutPage.experience, items: about.experience },
+].filter((section) => section.items.length > 0);
+
+const seoDescription = bio.length > 0 ? bio[0].slice(0, 180) : t.aboutPage.seoFallback;
+---
+
+<BaseLayout
+  locale={locale}
+  title={about.title}
+  description={seoDescription}
+  image={about.portrait ?? undefined}
+>
+  <section class="mx-auto max-w-gallery px-4 py-12 sm:px-8 sm:py-16">
+    <header class="border-b border-ink/10 pb-6">
+      <p class="eyebrow">{t.aboutPage.eyebrow}</p>
+      <h1 class="font-display mt-3 text-lg tracking-[0.01em] text-ink sm:text-xl">
+        {about.title}
+      </h1>
+    </header>
+
+    <div class="mt-10 grid gap-10 lg:grid-cols-12 lg:gap-14">
+      <!-- Portrait -->
+      <div class="lg:col-span-5">
+        {
+          about.portrait && (
+            <figure class="work-frame">
+              <img
+                src={about.portrait}
+                alt={t.aboutPage.portraitAlt(about.title)}
+                data-fade
+                class="w-full"
+                loading="lazy"
+                decoding="async"
+              />
+              {about.portraitCaption && (
+                <figcaption class="mt-3 px-1 pb-1 text-xs text-clay">{about.portraitCaption}</figcaption>
+              )}
+            </figure>
+          )
+        }
+      </div>
+
+      <!-- Biographie -->
+      <div class="lg:col-span-6 lg:col-start-7">
+        {
+          about.quote && (
+            <blockquote class="font-display mb-8 border-l border-ink/20 pl-5 text-xl italic leading-snug text-ink/80 sm:text-2xl">
+              {about.quote}
+            </blockquote>
+          )
+        }
+        <div class="space-y-5 text-[0.95rem] leading-relaxed text-ink/80">
+          {bio.map((paragraph) => <p>{paragraph}</p>)}
+        </div>
+
+        <!-- Vidéo d'atelier : compacte, avec la légende à droite pour combler le bas de la colonne -->
+        {
+          (about.bioVideoMp4 || about.bioVideoWebm) && (
+            <figure class="mt-10 flex max-w-xl flex-col items-start gap-2 sm:flex-row sm:gap-5">
+              <video
+                controls
+                playsinline
+                preload="metadata"
+                poster={about.bioVideoPoster ?? undefined}
+                aria-label={t.aboutPage.videoLabel}
+                class="block w-64 shrink-0 rounded-sm bg-black sm:w-80"
+              >
+                {about.bioVideoWebm && <source src={about.bioVideoWebm} type="video/webm" />}
+                {about.bioVideoMp4 && <source src={about.bioVideoMp4} type="video/mp4" />}
+              </video>
+              <figcaption class="max-w-xs text-xs leading-relaxed text-clay sm:pt-1">
+                {about.bioVideoCaption || t.aboutPage.videoLabel}
+              </figcaption>
+            </figure>
+          )
+        }
+      </div>
+    </div>
+
+    <!-- Expositions : renvoie à la page dédiée -->
+    <section class="mt-16 border-t border-ink/10 pt-8">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-baseline sm:justify-between">
+        <h2 class="eyebrow">{t.aboutPage.exhibitions}</h2>
+        <a
+          href={withLocale('/expositions', locale)}
+          class="link-underline text-xs uppercase tracking-[0.2em] text-ink"
+        >
+          {t.aboutPage.seeExhibitions}
+        </a>
+      </div>
+    </section>
+
+    <!-- CV -->
+    {
+      cvSections.length > 0 && (
+        <section class="mt-16 border-t border-ink/10 pt-10">
+          <h2 class="eyebrow mb-8">{about.cvTitle}</h2>
+          <div class="grid gap-10 sm:grid-cols-2">
+            {cvSections.map((section) => (
+              <div>
+                <h3 class="font-display text-xl text-ink">{section.title}</h3>
+                <ul class="mt-4 space-y-2 text-sm leading-relaxed text-ink/75">
+                  {section.items.map((item) => (
+                    <li class="border-b border-ink/5 pb-2 last:border-0">{item}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </section>
+      )
+    }
+
+    <!-- Contact (bas de page) -->
+    <section class="mt-16 border-t border-ink/10 pt-8">
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div class="max-w-measure space-y-3 text-sm leading-relaxed text-clay">
+          {
+            about.contactIntro
+              ? paragraphs(about.contactIntro).map((paragraph) => <p>{paragraph}</p>)
+              : <p>{t.aboutPage.contactIntroFallback}</p>
+          }
+        </div>
+        <a
+          href={withLocale('/contact', locale)}
+          class="link-underline shrink-0 text-xs uppercase tracking-[0.2em] text-ink"
+        >
+          {t.aboutPage.contactMe}
+        </a>
+      </div>
+    </section>
+  </section>
+</BaseLayout>

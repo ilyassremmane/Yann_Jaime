@@ -1,0 +1,98 @@
+[
+  {
+    "theme": null,
+    "source": "AGORA_1.jpg",
+    "file": "/images/expositions/agora-1.webp",
+    "thumb": "/images/expositions/thumbs/agora-1.webp",
+    "width": 828,
+    "height": 462,
+    "bytes": 54254,
+    "srcWidth": 828,
+    "srcHeight": 462,
+    "srcBytes": 99128
+  },
+  {
+    "theme": null,
+    "source": "AGORA_2.jpg",
+    "file": "/images/expositions/agora-2.webp",
+    "thumb": "/images/expositions/thumbs/agora-2.webp",
+    "width": 828,
+    "height": 459,
+    "bytes": 34684,
+    "srcWidth": 828,
+    "srcHeight": 459,
+    "srcBytes": 73226
+  },
+  {
+    "theme": null,
+    "source": "AGORA_3.jpg",
+    "file": "/images/expositions/agora-3.webp",
+    "thumb": "/images/expositions/thumbs/agora-3.webp",
+    "width": 828,
+    "height": 564,
+    "bytes": 40094,
+    "srcWidth": 828,
+    "srcHeight": 564,
+    "srcBytes": 84683
+  },
+  {
+    "theme": null,
+    "source": "CHELSEA_2033.jpg",
+    "file": "/images/expositions/chelsea-2033.webp",
+    "thumb": "/images/expositions/thumbs/chelsea-2033.webp",
+    "width": 1170,
+    "height": 971,
+    "bytes": 39122,
+    "srcWidth": 1170,
+    "srcHeight": 971,
+    "srcBytes": 545744
+  },
+  {
+    "theme": null,
+    "source": "DSIQ8327.JPG",
+    "file": "/images/expositions/dsiq8327.webp",
+    "thumb": "/images/expositions/thumbs/dsiq8327.webp",
+    "width": 1920,
+    "height": 1440,
+    "bytes": 170266,
+    "srcWidth": 2048,
+    "srcHeight": 1536,
+    "srcBytes": 355730
+  },
+  {
+    "theme": null,
+    "source": "04_EXPO_MILAN_SEPTEMBRE.jpg",
+    "file": "/images/expositions/expo-milan-septembre.webp",
+    "thumb": "/images/expositions/thumbs/expo-milan-septembre.webp",
+    "width": 1920,
+    "height": 1280,
+    "bytes": 100658,
+    "srcWidth": 2048,
+    "srcHeight": 1365,
+    "srcBytes": 428969
+  },
+  {
+    "theme": null,
+    "source": "IMG_9242.jpg",
+    "file": "/images/expositions/img-9242.webp",
+    "thumb": "/images/expositions/thumbs/img-9242.webp",
+    "width": 1920,
+    "height": 1440,
+    "bytes": 245860,
+    "srcWidth": 4032,
+    "srcHeight": 3024,
+    "srcBytes": 3695126
+  },
+  {
+    "theme": null,
+    "source": "IMG_9243.jpg",
+    "file": "/images/expositions/img-9243.webp",
+    "thumb": "/images/expositions/thumbs/img-9243.webp",
+    "width": 1920,
+    "height": 1440,
+    "bytes": 74542,
+    "srcWidth": 4032,
+    "srcHeight": 3024,
+    "srcBytes": 2168911
+  }
+]

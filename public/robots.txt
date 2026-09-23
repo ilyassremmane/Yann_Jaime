@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+# Interface d'administration du CMS
+Disallow: /keystatic
+
+Sitemap: https://www.yannjaime.com/sitemap-index.xml

@@ -1,0 +1,90 @@
+---
+import type { Settings } from '../lib/content';
+import { type Locale, ui, withLocale } from '../lib/i18n';
+
+interface Props {
+  settings: Settings;
+  /** Langue courante (libellés et liens du pied de page). */
+  locale?: Locale;
+}
+
+const { settings, locale = 'fr' } = Astro.props;
+const t = ui[locale];
+const year = new Date().getFullYear();
+
+const navLinks = [
+  { href: withLocale('/oeuvres', locale), label: t.nav.works },
+  { href: withLocale('/a-propos', locale), label: t.nav.about },
+  { href: withLocale('/contact', locale), label: t.nav.contact },
+];
+---
+
+<footer class="mt-24 border-t border-ink/10 bg-linen/60 sm:mt-32">
+  <div class="mx-auto max-w-gallery px-4 py-12 sm:px-8 sm:py-16">
+    <div class="grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
+      <div>
+        <p class="font-display text-2xl tracking-[0.1em] text-ink">{settings.siteName}</p>
+        <p class="eyebrow mt-2">{settings.tagline}</p>
+        {settings.location && <p class="mt-4 text-sm text-clay">{settings.location}</p>}
+      </div>
+
+      <div class="text-sm">
+        <p class="eyebrow">{t.footer.contact}</p>
+        <ul class="mt-4 space-y-2">
+          <li>
+            <a class="link-underline text-ink" href={`mailto:${settings.email}`}>{settings.email}</a>
+          </li>
+          {
+            settings.phone && (
+              <li>
+                <a class="link-underline text-ink" href={`tel:${settings.phone.replace(/\s+/g, '')}`}>
+                  {settings.phone}
+                </a>
+              </li>
+            )
+          }
+        </ul>
+        {
+          settings.socials.length > 0 && (
+            <ul class="mt-5 flex flex-wrap gap-x-5 gap-y-2">
+              {settings.socials.map((social) => (
+                <li>
+                  <a
+                    class="link-underline text-xs uppercase tracking-[0.2em] text-clay"
+                    href={social.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {social.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )
+        }
+      </div>
+
+      <div class="text-sm">
+        <p class="eyebrow">{t.footer.browse}</p>
+        <ul class="mt-4 space-y-2">
+          {
+            navLinks.map((link) => (
+              <li>
+                <a class="link-underline text-ink" href={link.href}>
+                  {link.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+
+    <div
+      class="mt-12 flex flex-col gap-2 border-t border-ink/10 pt-6 text-xs text-clay sm:flex-row sm:items-center sm:justify-between"
+    >
+      <p>{settings.copyright} {year}</p>
+      {settings.footerNote && <p class="max-w-measure">{settings.footerNote}</p>}
+    </div>
+  </div>
+</footer>

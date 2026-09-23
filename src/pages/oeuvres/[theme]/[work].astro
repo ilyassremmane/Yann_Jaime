@@ -1,0 +1,217 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import SecondaryGallery from '../../../components/SecondaryGallery.vue';
+import type { Work } from '../../../lib/content';
+import {
+  getSettings,
+  getTheme,
+  getThemes,
+  getWorks,
+  getWorksByTheme,
+  paragraphs,
+  themeTitle,
+  workMeta,
+} from '../../../lib/content';
+import { SITE_URL, artist, artwork, breadcrumbs, graph, website } from '../../../lib/seo';
+import { type Locale, ui, withLocale } from '../../../lib/i18n';
+
+export async function getStaticPaths() {
+  const [themes, works] = await Promise.all([getThemes(), getWorks()]);
+  return themes.flatMap((theme) =>
+    works
+      .filter((work: Work) => work.theme === theme.slug)
+      .map((work: Work) => ({
+        params: { theme: theme.slug, work: work.slug },
+        props: { themeSlug: theme.slug, workSlug: work.slug },
+      }))
+  );
+}
+
+interface Props {
+  themeSlug: string;
+  workSlug: string;
+  locale?: Locale;
+}
+
+const locale: Locale = Astro.props.locale ?? 'fr';
+const t = ui[locale];
+const { themeSlug, workSlug } = Astro.props;
+
+const [theme, themeWorks, settings] = await Promise.all([
+  getTheme(themeSlug, locale),
+  getWorksByTheme(themeSlug, locale),
+  getSettings(locale),
+]);
+
+if (!theme) throw new Error(`Thème introuvable : ${themeSlug}`);
+const work = themeWorks.find((item: Work) => item.slug === workSlug);
+if (!work) throw new Error(`Œuvre introuvable : ${workSlug}`);
+
+const index = themeWorks.findIndex((item: Work) => item.slug === workSlug);
+const prev = index > 0 ? themeWorks[index - 1] : null;
+const next = index < themeWorks.length - 1 ? themeWorks[index + 1] : null;
+
+const themeName = await themeTitle(theme.slug, locale);
+
+const meta = workMeta(work);
+const description = paragraphs(work.description);
+const gallery = work.gallery.map((src, galleryIndex) => ({
+  src,
+  alt: t.explorer.viewAlt(work.title, galleryIndex + 1),
+}));
+
+const seoDescription =
+  description.length > 0
+    ? description.join(' ').slice(0, 180)
+    : t.explorer.seoFallback(work.title, work.year, work.technique);
+
+const site = SITE_URL;
+const worksPath = withLocale('/oeuvres', locale);
+const themePath = withLocale(`/oeuvres/${theme.slug}`, locale);
+const workPath = withLocale(`/oeuvres/${theme.slug}/${work.slug}`, locale);
+const pageUrl = new URL(workPath, site).toString();
+const structuredData = graph([
+  artist(settings, site),
+  website(settings, site, locale),
+  artwork(work, site, pageUrl, locale),
+  breadcrumbs(site, [
+    { name: t.nav.home, url: withLocale('/', locale) },
+    { name: t.nav.works, url: worksPath },
+    { name: themeName, url: themePath },
+    { name: work.title, url: workPath },
+  ]),
+]);
+---
+
+<BaseLayout
+  locale={locale}
+  title={work.title}
+  description={seoDescription}
+  image={work.image}
+  imageAlt={`${work.title}${work.year ? `, ${work.year}` : ''} — ${work.technique ?? t.explorer.available}`}
+  type="article"
+  structuredData={structuredData}
+>
+  <article class="bg-white text-black">
+    <div class="mx-auto max-w-4xl px-4 py-10 sm:px-8 sm:py-16">
+      <nav
+      class="mb-8 text-center text-xs uppercase tracking-[0.2em] text-black/50"
+      aria-label={t.explorer.breadcrumbAria}
+    >
+      <a href={worksPath} class="link-underline hover:text-black">{t.nav.works}</a>
+      <span class="mx-2" aria-hidden="true">/</span>
+      <a href={themePath} class="link-underline hover:text-black">{themeName}</a>
+    </nav>
+
+    <figure class="work-frame mx-auto max-w-3xl overflow-hidden">
+      {
+        work.image ? (
+          <img
+            src={work.image}
+            alt={`${work.title}${work.year ? `, ${work.year}` : ''}`}
+            class="w-full"
+            fetchpriority="high"
+            decoding="async"
+          />
+        ) : (
+          <div class="flex aspect-[4/3] items-center justify-center bg-neutral-100 text-xs uppercase tracking-[0.2em] text-black/50">
+            {t.explorer.comingSoon}
+          </div>
+        )
+      }
+    </figure>
+
+    <div class="mx-auto mt-10 max-w-2xl text-center">
+      <p class="eyebrow text-black">{themeName}</p>
+      <h1 class="font-display mt-3 text-lg leading-tight text-black sm:text-xl">{work.title}</h1>
+
+      {
+        meta.length > 0 && (
+          <dl class="mt-6 space-y-1.5 border-t border-black/10 pt-5 text-sm">
+            {work.technique && (
+              <div class="flex items-baseline justify-center gap-3">
+                <dt class="text-black/50">{t.explorer.techniqueLabel}</dt>
+                <dd class="text-black">{work.technique}</dd>
+              </div>
+            )}
+            {work.dimensions && (
+              <div class="flex items-baseline justify-center gap-3">
+                <dt class="text-black/50">{t.explorer.dimensionsLabel}</dt>
+                <dd class="text-black">{work.dimensions}</dd>
+              </div>
+            )}
+            {work.year && (
+              <div class="flex items-baseline justify-center gap-3">
+                <dt class="text-black/50">{t.explorer.yearLabel}</dt>
+                <dd class="text-black">{work.year}</dd>
+              </div>
+            )}
+          </dl>
+        )
+      }
+
+      {
+        description.length > 0 && (
+          <div class="mt-6 space-y-4 text-left text-[0.95rem] leading-relaxed text-black">
+            {description.map((paragraph) => (
+              <p>{paragraph}</p>
+            ))}
+          </div>
+        )
+      }
+
+      <p class="mt-6 text-xs uppercase tracking-[0.2em] text-black">
+        {work.available ? t.explorer.available : t.explorer.privateCollection}
+      </p>
+
+      <a
+        href={withLocale('/contact', locale)}
+        class="link-underline mt-8 inline-block text-xs uppercase tracking-[0.2em] text-black"
+      >
+        {t.explorer.requestInfo}
+      </a>
+    </div>
+
+    {
+      gallery.length > 0 && (
+        <section class="mx-auto mt-16 max-w-5xl border-t border-black/10 pt-8">
+          <h2 class="eyebrow mb-6 text-center text-black">{t.explorer.imagesTitle}</h2>
+          <SecondaryGallery client:visible images={gallery} locale={locale} />
+        </section>
+      )
+    }
+
+    <nav
+      class="mt-16 flex items-center justify-between gap-4 border-t border-black/10 pt-6 text-xs uppercase tracking-[0.2em]"
+      aria-label={t.explorer.imagesNavAria}
+    >
+      <div class="flex items-center justify-between gap-4 pb-4">
+        {
+          prev ? (
+            <a
+              href={withLocale(`/oeuvres/${theme.slug}/${prev.slug}`, locale)}
+              class="link-underline max-w-[45%] text-black/60 hover:text-black"
+            >
+              {t.explorer.navPrev}: {prev.title}
+            </a>
+          ) : (
+            <span></span>
+          )
+        }
+        {
+          next ? (
+            <a
+              href={withLocale(`/oeuvres/${theme.slug}/${next.slug}`, locale)}
+              class="link-underline max-w-[45%] text-right text-black/60 hover:text-black"
+            >
+              {next.title} — {t.explorer.navNext}
+            </a>
+          ) : (
+            <span></span>
+          )
+        }
+      </div>
+    </nav>
+    </div>
+  </article>
+</BaseLayout>

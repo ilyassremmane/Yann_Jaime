@@ -1,0 +1,199 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import WorkCard from '../components/WorkCard.astro';
+import { getHomepage, getSettings, getWorks, paragraphs } from '../lib/content';
+import { SITE_URL, artist, breadcrumbs, graph, imageCollectionPage, website } from '../lib/seo';
+import { imageSize } from '../lib/content';
+import { type Locale, ui, withLocale } from '../lib/i18n';
+
+interface Props {
+  /** `fr` par défaut ; la version anglaise passe `locale="en"` (voir /en/). */
+  locale?: Locale;
+}
+
+const locale: Locale = Astro.props.locale ?? 'fr';
+const t = ui[locale];
+
+const [homepage, works, settings] = await Promise.all([
+  getHomepage(locale),
+  getWorks(locale),
+  getSettings(locale),
+]);
+
+/** Œuvres de la sélection d'accueil, sinon repli sur les œuvres mises en avant. */
+const selected = homepage.selection
+  .map((slug) => works.find((work) => work.slug === slug))
+  .filter((work): work is NonNullable<typeof work> => Boolean(work));
+
+const highlight = (selected.length > 0 ? selected : works.filter((work) => work.featured)).slice(0, 6);
+
+const introParagraphs = paragraphs(homepage.introText);
+
+/* Média principal : photo ou vidéo (fichier ou plateforme) */
+const videoUrl = homepage.heroVideoUrl ?? '';
+const embedMatch = videoUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{6,})/);
+const vimeoMatch = videoUrl.match(/vimeo\.com\/(\d+)/);
+const embedUrl = embedMatch
+  ? `https://www.youtube-nocookie.com/embed/${embedMatch[1]}?autoplay=1&mute=1&loop=1&playlist=${embedMatch[1]}&controls=0&rel=0`
+  : vimeoMatch
+    ? `https://player.vimeo.com/video/${vimeoMatch[1]}?autoplay=1&muted=1&loop=1&background=1`
+    : null;
+const showVideo = homepage.heroMediaType === 'video' && videoUrl.length > 0;
+
+/** Dimensions réelles de l'image du hero (évite tout saut de mise en page). */
+const heroSize = homepage.heroImage ? imageSize(homepage.heroImage) : null;
+
+const site = SITE_URL;
+const homePath = withLocale('/', locale);
+const pageUrl = new URL(homePath, site).toString();
+const structuredData = graph([
+  artist(settings, site),
+  website(settings, site, locale),
+  imageCollectionPage({
+    site,
+    url: pageUrl,
+    name: `${settings.siteName} — ${settings.tagline}`,
+    description: settings.metaDescription,
+    id: locale === 'en' ? '/en/#accueil' : '/#accueil',
+    locale,
+    items: highlight.map((work) => ({
+      url: withLocale(`/oeuvres/${work.slug}`, locale),
+      name: work.title,
+      image: work.image || undefined,
+    })),
+  }),
+  breadcrumbs(site, [{ name: t.nav.home, url: homePath }]),
+]);
+---
+
+<BaseLayout locale={locale} structuredData={structuredData} headerVariant="overlay">
+  <!--
+    Hero plein écran : l'image occupe toute la page et passe SOUS l'en-tête.
+    Deux voiles dégradés assurent la lisibilité (en haut : l'en-tête, en bas : la légende).
+  -->
+  <section class="relative w-full overflow-hidden bg-ink">
+    <div class="hero-full relative w-full">
+      {
+        showVideo ? (
+          embedUrl ? (
+            <iframe
+              src={embedUrl}
+              title={`${t.home.videoLabel} — ${homepage.heroTitle}`}
+              class="absolute inset-0 h-full w-full"
+              allow="autoplay; fullscreen; picture-in-picture"
+              allowfullscreen
+              loading="eager"
+            />
+          ) : (
+            <video
+              class="absolute inset-0 h-full w-full object-cover"
+              src={videoUrl}
+              poster={homepage.heroImage ?? undefined}
+              autoplay
+              muted
+              loop
+              playsinline
+            />
+          )
+        ) : homepage.heroImage ? (
+          <img
+            src={homepage.heroImage}
+            alt={homepage.heroCaption ?? t.home.workAlt(homepage.heroTitle)}
+            width={heroSize?.width}
+            height={heroSize?.height}
+            class="absolute inset-0 h-full w-full object-cover"
+            fetchpriority="high"
+            decoding="async"
+          />
+        ) : (
+          <div class="absolute inset-0 flex items-center justify-center">
+            <p class="eyebrow text-canvas/70">{t.home.heroPlaceholder}</p>
+          </div>
+        )
+      }
+
+      <div
+        class="pointer-events-none absolute inset-x-0 top-0 h-44 bg-gradient-to-b from-ink/60 via-ink/20 to-transparent sm:h-56"
+        aria-hidden="true"
+      ></div>
+      <div
+        class="pointer-events-none absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-ink/80 via-ink/35 to-transparent"
+        aria-hidden="true"
+      ></div>
+
+      <!-- Titre et légende, posés sur l'œuvre -->
+      <div class="absolute inset-x-0 bottom-0">
+        <div class="mx-auto max-w-gallery px-4 pb-10 sm:px-8 sm:pb-16">
+          <p class="eyebrow text-canvas/70">{homepage.heroSubtitle ?? t.home.eyebrow}</p>
+          <h1 class="font-display mt-3 text-4xl leading-[1.02] text-canvas sm:text-6xl lg:text-7xl">
+            {homepage.heroTitle}
+          </h1>
+          {
+            homepage.heroCaption && (
+              <p class="mt-4 max-w-measure text-sm leading-relaxed text-canvas/80">
+                {homepage.heroCaption}
+              </p>
+            )
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- Introduction -->
+  {
+    (homepage.introTitle || introParagraphs.length > 0) && (
+      <section class="mx-auto max-w-gallery px-4 py-14 sm:px-8 sm:py-20">
+        <div class="grid gap-8 lg:grid-cols-12">
+          <div class="lg:col-span-4">
+            {homepage.introTitle && (
+              <h2 class="font-display text-2xl leading-snug text-ink sm:text-3xl">
+                {homepage.introTitle}
+              </h2>
+            )}
+          </div>
+          <div class="space-y-5 text-[0.95rem] leading-relaxed text-ink/80 lg:col-span-7 lg:col-start-6">
+            {introParagraphs.map((paragraph) => <p>{paragraph}</p>)}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  <!-- Sélection d'œuvres -->
+  {
+    highlight.length > 0 && (
+      <section class="mx-auto max-w-gallery px-4 pb-16 sm:px-8 sm:pb-24">
+        <div class="mb-8 flex flex-wrap items-baseline justify-between gap-4 border-t border-ink/10 pt-6">
+          <h2 class="eyebrow">{t.home.selection}</h2>
+          <a
+            href={withLocale('/oeuvres', locale)}
+            class="link-underline text-xs uppercase tracking-[0.2em] text-clay hover:text-ink"
+          >
+            {homepage.worksLinkLabel} →
+          </a>
+        </div>
+
+        <div class="grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+          {
+            highlight.map((work, index) => (
+              <WorkCard work={work} priority={index < 3} index={index} locale={locale} />
+            ))
+          }
+        </div>
+      </section>
+    )
+  }
+
+  <!-- Appel vers la biographie -->
+  <section class="mx-auto max-w-gallery px-4 pb-20 sm:px-8 sm:pb-28">
+    <div class="flex flex-col gap-4 border-t border-ink/10 pt-8 sm:flex-row sm:items-center sm:justify-between">
+      <p class="max-w-measure text-sm leading-relaxed text-clay">{t.home.bioBlurb}</p>
+      <a
+        href={withLocale('/a-propos', locale)}
+        class="link-underline shrink-0 text-xs uppercase tracking-[0.2em] text-ink"
+      >
+        {t.home.readBio} →
+      </a>
+    </div>
+  </section>
+</BaseLayout>

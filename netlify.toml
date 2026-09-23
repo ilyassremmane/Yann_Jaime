@@ -1,0 +1,11 @@
+[build]
+  # Site 100 % statique : l'admin Keystatic (/keystatic) est désactivé au build
+  # car Netlify n'exécute pas l'adapter Node en mode standalone.
+  command = "npm run build:static"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "24"
+
+# Astro génère des URL propres du type /a-propos/ (dossier + index.html),
+# Netlify les sert nativement — aucune règle redirect nécessaire.

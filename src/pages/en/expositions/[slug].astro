@@ -1,0 +1,20 @@
+---
+/**
+ * Fiche d'exposition — version anglaise (`/en/expositions/<slug>`).
+ * Mêmes URL que la version française, contenus relus en anglais.
+ */
+import Page from '../../expositions/[slug].astro';
+import { getExpositions } from '../../../lib/content';
+
+export async function getStaticPaths() {
+  const expositions = await getExpositions();
+  return expositions.map((exposition) => ({
+    params: { slug: exposition.slug },
+    props: { exposition },
+  }));
+}
+
+const { exposition } = Astro.props;
+---
+
+<Page exposition={exposition} locale="en" />

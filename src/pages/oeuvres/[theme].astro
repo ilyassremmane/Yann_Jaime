@@ -1,0 +1,124 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import WorkCard from '../../components/WorkCard.astro';
+import type { Work } from '../../lib/content';
+import {
+  getSettings,
+  getTheme,
+  getThemes,
+  getWorks,
+  getWorksByTheme,
+  paragraphs,
+  themeCover,
+} from '../../lib/content';
+import { SITE_URL, artist, breadcrumbs, graph, imageCollectionPage, website } from '../../lib/seo';
+import { type Locale, ui, withLocale } from '../../lib/i18n';
+
+export async function getStaticPaths() {
+  const themes = await getThemes();
+  return themes.map((theme) => ({
+    params: { theme: theme.slug },
+    props: { themeSlug: theme.slug },
+  }));
+}
+
+interface Props {
+  themeSlug: string;
+  /** `fr` par défaut ; la version anglaise passe `locale="en"` (voir /en/). */
+  locale?: Locale;
+}
+
+const locale: Locale = Astro.props.locale ?? 'fr';
+const t = ui[locale];
+const { themeSlug } = Astro.props;
+
+/* Le slug est identique dans les deux langues : on relit le thème traduit. */
+const [theme, themeWorks, works, settings] = await Promise.all([
+  getTheme(themeSlug, locale),
+  getWorksByTheme(themeSlug, locale),
+  getWorks(locale),
+  getSettings(locale),
+]);
+
+if (!theme) throw new Error(`Thème introuvable : ${themeSlug}`);
+
+const cover = await themeCover(theme, works);
+const intro = paragraphs(theme.intro);
+
+const themeWorksFull: Work[] = themeWorks;
+
+const site = SITE_URL;
+const worksPath = withLocale('/oeuvres', locale);
+const themePath = withLocale(`/oeuvres/${theme.slug}`, locale);
+const pageUrl = new URL(themePath, site).toString();
+const seoDescription =
+  intro.length > 0
+    ? intro.join(' ').slice(0, 180)
+    : t.worksPage.description(themeWorksFull.length);
+const structuredData = graph([
+  artist(settings, site),
+  website(settings, site, locale),
+  imageCollectionPage({
+    site,
+    url: pageUrl,
+    name: `${theme.title} — ${settings.siteName}`,
+    description: seoDescription,
+    id: locale === 'en' ? `/en/oeuvres/${theme.slug}/#collection` : `/oeuvres/${theme.slug}/#collection`,
+    locale,
+    items: themeWorksFull.map((work: Work) => ({
+      url: withLocale(`/oeuvres/${theme.slug}/${work.slug}`, locale),
+      name: work.title,
+      image: work.image || undefined,
+    })),
+  }),
+  breadcrumbs(site, [
+    { name: t.nav.home, url: withLocale('/', locale) },
+    { name: t.nav.works, url: worksPath },
+    { name: theme.title, url: themePath },
+  ]),
+]);
+---
+
+<BaseLayout
+  locale={locale}
+  title={`${theme.title} — ${t.worksPage.title}`}
+  description={seoDescription}
+  image={cover ?? undefined}
+  structuredData={structuredData}
+>
+  <section class="mx-auto max-w-gallery px-4 py-12 sm:px-8 sm:py-16">
+    <nav
+      class="mb-6 text-center text-xs uppercase tracking-[0.2em] text-clay"
+      aria-label={t.explorer.breadcrumbAria}
+    >
+      <a href={worksPath} class="link-underline hover:text-ink">{t.worksPage.backToThemes}</a>
+    </nav>
+
+    <header class="mb-10 text-center">
+      <p class="eyebrow">{t.worksPage.eyebrow}</p>
+      <h1 class="font-display mt-3 text-lg tracking-[0.01em] text-ink sm:text-xl">
+        {theme.title}
+      </h1>
+      {
+        theme.tagline && (
+          <p class="mx-auto mt-3 max-w-measure text-sm leading-relaxed text-clay">{theme.tagline}</p>
+        )
+      }
+      <p class="mt-3 text-xs uppercase tracking-[0.2em] text-clay">
+        {t.worksPage.themeCount(themeWorksFull.length)}
+      </p>
+    </header>
+
+    {
+      themeWorksFull.length > 0 ? (
+        <div class="grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+          {themeWorksFull.map((work: Work, index: number) => (
+            <WorkCard work={work} priority={index < 6} index={index} locale={locale} />
+          ))}
+        </div>
+      ) : (
+        <p class="text-center text-sm text-clay">{t.explorer.empty}</p>
+      )
+    }
+  </section>
+</BaseLayout>

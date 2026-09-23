@@ -1,0 +1,41 @@
+{
+  "name": "yann-jaime-portfolio",
+  "type": "module",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Portfolio en Astro SSG de l'artiste peintre Yann Jaime — série Tours Nuages, intérieurs, architectures et figures",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "build:static": "KEYSTATIC_DISABLED=1 astro build",
+    "preview": "astro preview",
+    "sync": "astro sync",
+    "check": "astro check",
+    "astro": "astro",
+    "images:optimize": "node scripts/optimize-images.js",
+    "images:logo": "node scripts/optimize-logo.mjs",
+    "content:seed": "node scripts/seed-content.mjs"
+  },
+  "dependencies": {
+    "@astrojs/node": "^9.5.5",
+    "@astrojs/react": "^4.4.2",
+    "@astrojs/sitemap": "^3.7.4",
+    "@astrojs/tailwind": "^5.1.5",
+    "@astrojs/vue": "^5.1.4",
+    "@keystatic/astro": "^5.2.0",
+    "@keystatic/core": "^0.6.9",
+    "astro": "^5.18.2",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "sharp": "^0.33.5",
+    "tailwindcss": "^3.4.19",
+    "vue": "^3.5.42"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "chrome-remote-interface": "^0.34.0",
+    "typescript": "^5.7.3"
+  }
+}

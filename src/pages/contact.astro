@@ -1,0 +1,120 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getAbout, getSettings, paragraphs } from '../lib/content';
+import { type Locale, ui, withLocale } from '../lib/i18n';
+
+interface Props {
+  /** `fr` par défaut ; la version anglaise passe `locale="en"` (voir /en/). */
+  locale?: Locale;
+}
+
+const locale: Locale = Astro.props.locale ?? 'fr';
+const t = ui[locale];
+
+const [settings, about] = await Promise.all([getSettings(locale), getAbout(locale)]);
+
+const intro =
+  paragraphs(about.contactIntro).length > 0
+    ? paragraphs(about.contactIntro)
+    : [t.contactPage.introFallback];
+
+const mailto = `mailto:${settings.email}?subject=${encodeURIComponent(t.contactPage.subject)}`;
+---
+
+<BaseLayout
+  locale={locale}
+  title={t.contactPage.title}
+  description={t.contactPage.description(settings.email, settings.location)}
+>
+  <section class="mx-auto max-w-gallery px-4 py-12 sm:px-8 sm:py-16">
+    <header class="border-b border-ink/10 pb-6">
+      <p class="eyebrow">{t.contactPage.eyebrow}</p>
+      <h1 class="font-display mt-3 text-lg tracking-[0.01em] text-ink sm:text-xl">
+        {t.contactPage.title}
+      </h1>
+    </header>
+
+    <div class="mt-10 grid gap-12 lg:grid-cols-12">
+      <div class="lg:col-span-6">
+        <div class="space-y-5 text-[0.95rem] leading-relaxed text-ink/80">
+          {intro.map((paragraph) => <p>{paragraph}</p>)}
+        </div>
+
+        <dl class="mt-10 space-y-5 border-t border-ink/10 pt-6 text-sm">
+          <div>
+            <dt class="eyebrow mb-2">{t.contactPage.email}</dt>
+            <dd>
+              <a class="font-display link-underline text-xl text-ink sm:text-2xl" href={mailto}>
+                {settings.email}
+              </a>
+            </dd>
+          </div>
+          {
+            settings.phone && (
+              <div>
+                <dt class="eyebrow mb-2">{t.contactPage.phone}</dt>
+                <dd>
+                  <a class="link-underline text-ink" href={`tel:${settings.phone.replace(/\s+/g, '')}`}>
+                    {settings.phone}
+                  </a>
+                </dd>
+              </div>
+            )
+          }
+          {
+            settings.location && (
+              <div>
+                <dt class="eyebrow mb-2">{t.contactPage.studio}</dt>
+                <dd class="text-ink/80">{settings.location}</dd>
+              </div>
+            )
+          }
+        </dl>
+
+        <a
+          href={mailto}
+          class="mt-10 inline-block border border-ink px-6 py-3 text-xs uppercase tracking-[0.24em] text-ink transition-colors duration-500 hover:bg-ink hover:text-canvas"
+        >
+          {t.contactPage.writeMessage}
+        </a>
+      </div>
+
+      <div class="lg:col-span-5 lg:col-start-8">
+        {
+          settings.socials.length > 0 && (
+            <div>
+              <h2 class="eyebrow mb-4">{t.contactPage.socials}</h2>
+              <ul class="space-y-3 text-sm">
+                {settings.socials.map((social) => (
+                  <li>
+                    <a
+                      class="link-underline text-ink"
+                      href={social.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {social.label} →
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )
+        }
+
+        <div class="mt-10 border-t border-ink/10 pt-6">
+          <h2 class="eyebrow mb-4">{t.contactPage.workHeading}</h2>
+          <p class="max-w-measure text-sm leading-relaxed text-clay">
+            {t.contactPage.workText}
+          </p>
+          <a
+            href={withLocale('/oeuvres', locale)}
+            class="link-underline mt-5 inline-block text-xs uppercase tracking-[0.2em] text-ink"
+          >
+            {t.contactPage.browseWorks}
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

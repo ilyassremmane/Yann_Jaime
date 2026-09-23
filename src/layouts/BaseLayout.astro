@@ -1,0 +1,171 @@
+---
+import '../styles/global.css';
+import '../styles/motion.css';
+import { ClientRouter } from 'astro:transitions';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import { getSettings } from '../lib/content';
+import { type Locale, ui, withLocale } from '../lib/i18n';
+
+interface Props {
+  /** Langue de la page : `fr` (racine `/`) ou `en` (`/en/…`). */
+  locale?: Locale;
+  title?: string;
+  description?: string;
+  image?: string;
+  imageAlt?: string;
+  canonical?: string;
+  type?: 'website' | 'article';
+  noindex?: boolean;
+  structuredData?: string;
+  /** `overlay` : en-tête transparent posé sur une image plein écran (accueil). */
+  headerVariant?: 'solid' | 'overlay';
+}
+
+const locale: Locale = Astro.props.locale ?? 'fr';
+const t = ui[locale];
+
+const settings = await getSettings(locale);
+
+const {
+  title,
+  description = settings.metaDescription,
+  image = settings.shareImage ?? undefined,
+  imageAlt,
+  canonical = Astro.url.pathname,
+  type = 'website',
+  noindex = false,
+  structuredData,
+  headerVariant = 'solid',
+} = Astro.props;
+
+const SITE = (Astro.site?.toString() ?? 'https://www.yannjaime.com/').replace(/\/$/, '');
+const pageTitle = title ? `${title} — ${settings.siteName}` : `${settings.siteName} — ${settings.tagline}`;
+const fullUrl = new URL(canonical, SITE).toString();
+/*
+ * Alternates FR/EN (hreflang) : les mêmes URL servies dans les deux langues.
+ * On normalise depuis la page courante — robuste même si `canonical` n'a pas
+ * encore le préfixe `/en`.
+ */
+const basePath = canonical.replace(/^\/en(?=\/|$)/, '') || '/';
+const frUrl = new URL(withLocale(basePath, 'fr'), SITE).toString();
+const enUrl = new URL(withLocale(basePath, 'en'), SITE).toString();
+const fullImage = image ? new URL(image, SITE).toString() : undefined;
+const alt = imageAlt ?? description;
+// Dimensions réelles de l'image de partage (manifeste) pour og:image:width/height.
+const { imageSize } = await import('../lib/content');
+const shareSize = image ? imageSize(image) : null;
+---
+
+<!doctype html>
+<html lang={locale} class="scroll-smooth">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+
+    <!-- SEO de base -->
+    <meta name="description" content={description} />
+    <meta name="robots" content={noindex ? 'noindex, nofollow' : 'index, follow'} />
+    <link rel="canonical" href={fullUrl} />
+    <!-- Versions FR / EN de cette page (référencement multilingue) -->
+    <link rel="alternate" hreflang="fr" href={frUrl} />
+    <link rel="alternate" hreflang="en" href={enUrl} />
+    <link rel="alternate" hreflang="x-default" href={frUrl} />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <meta name="theme-color" content="#fbfaf7" />
+    <meta name="author" content={settings.siteName} />
+
+    <!-- Favicon & manifeste -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content={type} />
+    <meta property="og:site_name" content={settings.siteName} />
+    <meta property="og:locale" content={locale === 'en' ? 'en_US' : 'fr_FR'} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={fullUrl} />
+    {
+      fullImage && (
+        <>
+          <meta property="og:image" content={fullImage} />
+          <meta property="og:image:alt" content={alt} />
+          {shareSize && <meta property="og:image:width" content={String(shareSize.width)} />}
+          {shareSize && <meta property="og:image:height" content={String(shareSize.height)} />}
+        </>
+      )
+    }
+
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={description} />
+    {fullImage && <meta name="twitter:image" content={fullImage} />}
+    {fullImage && <meta name="twitter:image:alt" content={alt} />}
+
+    <!-- Réseaux de l'artiste (vérification de propriété, rel=me) -->
+    {settings.socials.map((social) => <link rel="me" href={social.url} />)}
+
+    <!-- Polices : Cormorant Garamond (titres) + Jost (textes) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Jost:ital,wght@0,300;0,400;0,500;1,300&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Transitions douces entre les pages (aucun rechargement complet) -->
+    <ClientRouter />
+
+    <!-- Données structurées : artiste, site, fil d'Ariane et page -->
+    {structuredData && <script is:inline type="application/ld+json" set:html={structuredData} />}
+  </head>
+  <body class="flex min-h-screen flex-col">
+    <!-- Fond « grain de toile » : voile de bruit fixe, sous tout le contenu -->
+    <div class="grain-overlay" aria-hidden="true"></div>
+
+    <a href="#contenu" class="skip-link">{t.skipLink}</a>
+
+    <div class="site-layer flex min-h-screen flex-col">
+      <Header
+        siteName={settings.siteName}
+        tagline={settings.tagline}
+        variant={headerVariant}
+        locale={locale}
+      />
+      <main id="contenu" class="flex-1" tabindex="-1">
+        <slot />
+      </main>
+      <Footer settings={settings} locale={locale} />
+    </div>
+
+    <script>
+      /*
+       * Fondu des images à l'arrivée (attribut `data-fade` sur l'image) :
+       * évite l'apparition brutale des vignettes au chargement.
+       * Les images déjà en cache sont marquées immédiatement.
+       */
+      const markImages = () => {
+        document.querySelectorAll<HTMLImageElement>('img[data-fade]:not(.is-loaded)').forEach((img) => {
+          if (img.complete) img.classList.add('is-loaded');
+        });
+      };
+
+      document.addEventListener(
+        'load',
+        (event) => {
+          const target = event.target as HTMLElement | null;
+          if (target instanceof HTMLImageElement && target.hasAttribute('data-fade')) {
+            target.classList.add('is-loaded');
+          }
+        },
+        true
+      );
+
+      document.addEventListener('astro:page-load', markImages);
+      markImages();
+    </script>
+  </body>
+</html>

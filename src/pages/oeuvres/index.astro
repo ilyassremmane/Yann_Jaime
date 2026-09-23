@@ -1,0 +1,93 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ThemeCard from '../../components/ThemeCard.astro';
+import { getSettings, getThemes, getWorks, themeCover } from '../../lib/content';
+import { SITE_URL, artist, breadcrumbs, graph, imageCollectionPage, website } from '../../lib/seo';
+import { type Locale, ui, withLocale } from '../../lib/i18n';
+
+interface Props {
+  /** `fr` par défaut ; la version anglaise passe `locale="en"` (voir /en/). */
+  locale?: Locale;
+}
+
+const locale: Locale = Astro.props.locale ?? 'fr';
+const t = ui[locale];
+
+const [themes, works, settings] = await Promise.all([
+  getThemes(locale),
+  getWorks(locale),
+  getSettings(locale),
+]);
+
+/* Couverture résolue de chaque thème (CMS → œuvre choisie → 1ʳᵉ œuvre → repli). */
+const cards = await Promise.all(
+  themes.map(async (theme) => {
+    const count = works.filter((work) => work.theme === theme.slug).length;
+    return { theme, count, cover: await themeCover(theme, works) };
+  })
+);
+
+const counts = new Map(cards.map((card) => [card.theme.slug, card.count]));
+const total = counts.size > 0 ? [...counts.values()].reduce((a, b) => a + b, 0) : 0;
+const description = t.worksPage.description(total);
+
+const site = SITE_URL;
+const worksPath = withLocale('/oeuvres', locale);
+const pageUrl = new URL(worksPath, site).toString();
+const structuredData = graph([
+  artist(settings, site),
+  website(settings, site, locale),
+  imageCollectionPage({
+    site,
+    url: pageUrl,
+    name: t.worksPage.jsonLd,
+    description,
+    id: locale === 'en' ? '/en/oeuvres/#collection' : '/oeuvres/#collection',
+    locale,
+    items: cards.map((card) => ({
+      url: withLocale(`/oeuvres/${card.theme.slug}`, locale),
+      name: card.theme.title,
+      image: card.cover || undefined,
+    })),
+  }),
+  breadcrumbs(site, [
+    { name: t.nav.home, url: withLocale('/', locale) },
+    { name: t.nav.works, url: worksPath },
+  ]),
+]);
+---
+
+<BaseLayout
+  locale={locale}
+  title={t.worksPage.title}
+  description={description}
+  structuredData={structuredData}
+>
+  <section class="mx-auto max-w-gallery px-4 py-12 sm:px-8 sm:py-16">
+    <header class="mb-8 border-b border-ink/10 pb-6">
+      <p class="eyebrow">{t.worksPage.eyebrow}</p>
+      <div class="mt-3 flex flex-wrap items-baseline justify-between gap-3">
+        <h1 class="font-display text-lg tracking-[0.01em] text-ink sm:text-xl">
+          {t.worksPage.themesTitle}
+        </h1>
+        <p class="text-xs uppercase tracking-[0.2em] text-clay">
+          {t.worksPage.count(total)}
+        </p>
+      </div>
+    </header>
+
+    <div class="grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        cards.map((card, index) => (
+          <ThemeCard
+            theme={card.theme}
+            cover={card.cover}
+            count={card.count}
+            priority={index < 3}
+            locale={locale}
+          />
+        ))
+      }
+    </div>
+  </section>
+</BaseLayout>

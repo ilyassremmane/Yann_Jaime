@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Yann Jaime">
+  <rect width="64" height="64" fill="#fbfaf7"/>
+  <rect x="0.5" y="0.5" width="63" height="63" fill="none" stroke="#1c1a17" stroke-opacity="0.12"/>
+  <text
+    x="32"
+    y="43"
+    text-anchor="middle"
+    font-family="Cormorant Garamond, Georgia, serif"
+    font-size="30"
+    letter-spacing="0.5"
+    fill="#1c1a17"
+  >YJ</text>
+</svg>
