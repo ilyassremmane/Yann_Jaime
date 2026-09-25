@@ -1,10 +1,10 @@
 title: "Portrait EF"
 theme: portrait
-image: "/images/works/portrait/portrait-ef.webp"
+image: "/images/works/portrait-ef/portrait-ef.webp"
 gallery: []
 year: ""
 dimensions: ""
 technique: ""
 description: ""
 featured: false
-available: true
+visible: true

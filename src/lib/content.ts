@@ -21,6 +21,8 @@ export type Theme = {
   /** Slug de l'œuvre de couverture choisie dans le CMS (sans image téléversée). */
   coverWork: string | null;
   intro: string | null;
+  /** Faux = thème masqué (et toutes ses œuvres) sur le site public. */
+  visible: boolean;
 };
 
 const FALLBACK_COVERS: Record<string, string> = {
@@ -63,7 +65,7 @@ export async function getThemes(locale: Locale = 'fr'): Promise<Theme[]> {
     return rawCache.get(slug) ?? '';
   };
 
-  return slugs.map((slug) => {
+  const themes = slugs.map((slug) => {
     const entry = (bySlug.get(slug) ?? {}) as {
       title?: string;
       titleEn?: string | null;
@@ -72,6 +74,7 @@ export async function getThemes(locale: Locale = 'fr'): Promise<Theme[]> {
       cover?: string | null;
       intro?: string | null;
       introEn?: string | null;
+      visible?: boolean | null;
     };
     const historic = THEMES.find((theme) => theme.value === slug);
     const yaml = rawYaml(slug);
@@ -86,8 +89,12 @@ export async function getThemes(locale: Locale = 'fr'): Promise<Theme[]> {
       cover: filled(entry.cover) ?? FALLBACK_COVERS[slug] ?? null,
       coverWork: coverWorkMatch?.[1]?.trim() || null,
       intro: pick(locale, entry.intro, entry.introEn),
+      /* Absent du YAML (avant la case « Afficher ») = visible. */
+      visible: entry.visible !== false,
     };
   });
+  /* Thème masqué : retiré du site public (listes + pages + œuvres). */
+  return themes.filter((theme) => theme.visible);
 }
 
 /**
@@ -128,7 +135,8 @@ export type Work = {
   technique: string | null;
   description: string | null;
   featured: boolean;
-  available: boolean;
+  /** Faux = œuvre masquée sur le site public (case « Afficher » du CMS). */
+  visible: boolean;
 };
 
 export type Settings = {
@@ -421,6 +429,13 @@ export async function getWorks(locale: Locale = 'fr'): Promise<Work[]> {
   const entries = await reader.collections.works.all();
   const sortLocale = locale === 'en' ? 'en' : 'fr';
 
+  /* Œuvres d'un thème masqué : retirées du site en même temps que lui. */
+  const hiddenThemes = new Set(
+    (await reader.collections.themes.all())
+      .filter(({ entry }) => entry.visible === false)
+      .map(({ slug }) => slug)
+  );
+
   return entries
     .map(({ slug, entry }) => ({
       slug,
@@ -434,8 +449,10 @@ export async function getWorks(locale: Locale = 'fr'): Promise<Work[]> {
       technique: filled(entry.technique),
       description: pick(locale, entry.description, entry.descriptionEn),
       featured: Boolean(entry.featured),
-      available: entry.available ?? true,
+      /* Absent du YAML (avant la case « Afficher ») = visible. */
+      visible: entry.visible !== false,
     }))
+    .filter((work) => work.visible && !hiddenThemes.has(work.theme))
     .sort((a, b) => {
       const yearA = Number(a.year ?? 0);
       const yearB = Number(b.year ?? 0);

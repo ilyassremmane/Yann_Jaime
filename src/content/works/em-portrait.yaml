@@ -1,10 +1,10 @@
 title: "EM Portrait"
 theme: portrait
-image: "/images/works/portrait/em-portrait.webp"
+image: "/images/works/em-portrait/em-portrait.webp"
 gallery: []
 year: ""
 dimensions: ""
 technique: ""
 description: ""
 featured: false
-available: true
+visible: true

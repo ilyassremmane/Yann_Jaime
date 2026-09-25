@@ -1,10 +1,10 @@
 title: "Sans titre"
 theme: bath
-image: "/images/works/bath/img-1608.webp"
+image: "/images/works/img-1608/img-1608.webp"
 gallery: []
 year: ""
 dimensions: ""
 technique: ""
 description: ""
 featured: false
-available: true
+visible: true

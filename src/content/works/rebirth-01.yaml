@@ -1,10 +1,10 @@
 title: "Rebirth"
 theme: bath
-image: "/images/works/bath/rebirth-01.webp"
+image: "/images/works/rebirth-01/rebirth-01.webp"
 gallery: []
 year: "2025"
 dimensions: "102 × 73 × 2,5 cm"
 technique: "Huile sur canevas"
 description: ""
 featured: true
-available: true
+visible: true

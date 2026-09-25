@@ -1,10 +1,10 @@
 title: "Tea Time"
 theme: nature-morte
-image: "/images/works/nature-morte/teatime.webp"
+image: "/images/works/teatime/teatime.webp"
 gallery: []
 year: "2022"
 dimensions: "50 × 65 cm"
 technique: "Acrylique sur papier"
 description: ""
 featured: true
-available: true
+visible: true

@@ -1,10 +1,10 @@
 title: "Hard Work"
 theme: arch-fenetres-tours-nuages
-image: "/images/works/arch-fenetres-tours-nuages/hard-work.webp"
+image: "/images/works/hard-work/hard-work.webp"
 gallery: []
 year: "2024"
 dimensions: "92 × 73 × 2,5 cm"
 technique: "Huile sur canevas"
 description: ""
 featured: true
-available: true
+visible: true

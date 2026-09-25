@@ -1,10 +1,10 @@
 title: "Fountains"
 theme: bath
-image: "/images/works/bath/celtic-fountains.webp"
+image: "/images/works/celtic-fountains/celtic-fountains.webp"
 gallery: []
 year: "2023"
 dimensions: "92 × 73 × 2,5 cm"
 technique: "Huile sur canevas"
 description: ""
 featured: true
-available: true
+visible: true

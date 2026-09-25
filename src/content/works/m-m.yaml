@@ -1,10 +1,10 @@
 title: "M M"
 theme: portrait
-image: "/images/works/portrait/m-m.webp"
+image: "/images/works/m-m/m-m.webp"
 gallery: []
 year: ""
 dimensions: ""
 technique: ""
 description: ""
 featured: false
-available: true
+visible: true

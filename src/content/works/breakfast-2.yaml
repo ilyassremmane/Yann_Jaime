@@ -1,10 +1,10 @@
 title: "Breakfast — détail"
 theme: nature-morte
-image: "/images/works/nature-morte/breakfast-2.webp"
+image: "/images/works/breakfast-2/breakfast-2.webp"
 gallery: []
 year: "2021"
 dimensions: "33 × 41 × 2,5 cm"
 technique: "Huile sur canevas"
 description: ""
 featured: false
-available: true
+visible: true

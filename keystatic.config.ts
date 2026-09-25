@@ -117,6 +117,11 @@ export default config({
           label: 'Texte de présentation (anglais)',
           multiline: true,
         }),
+        visible: fields.checkbox({
+          label: 'Afficher ce thème sur le site',
+          description: 'Décocher retire le thème ET toutes ses œuvres du site public (les URLs existantes affichent une 404).',
+          defaultValue: true,
+        }),
       },
     }),
 
@@ -194,8 +199,9 @@ export default config({
           description: 'Proposer l’œuvre dans la sélection éditoriale.',
           defaultValue: false,
         }),
-        available: fields.checkbox({
-          label: 'Disponible',
+        visible: fields.checkbox({
+          label: 'Afficher cette œuvre sur le site',
+          description: 'Décocher retire l’œuvre du site public (listes, pages détail, sélection d’accueil).',
           defaultValue: true,
         }),
       },

@@ -1,10 +1,10 @@
 title: "Laval n°2"
 theme: nature
-image: "/images/works/nature/laval-2.webp"
+image: "/images/works/laval-2/laval-2.webp"
 gallery: []
 year: "2025"
 dimensions: ""
 technique: "Huile sur toile"
 description: ""
 featured: false
-available: true
+visible: true

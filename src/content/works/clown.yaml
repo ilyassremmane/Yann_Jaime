@@ -1,10 +1,10 @@
 title: "Clown"
 theme: nature-morte
-image: "/images/works/nature-morte/clown.webp"
+image: "/images/works/clown/clown.webp"
 gallery: []
 year: ""
 dimensions: ""
 technique: ""
 description: ""
 featured: false
-available: true
+visible: true

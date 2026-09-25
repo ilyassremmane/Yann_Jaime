@@ -1,10 +1,10 @@
 title: "P YJ"
 theme: bath
-image: "/images/works/bath/p-yj.webp"
+image: "/images/works/p-yj/p-yj.webp"
 gallery: []
 year: ""
 dimensions: ""
 technique: ""
 description: ""
 featured: false
-available: true
+visible: true

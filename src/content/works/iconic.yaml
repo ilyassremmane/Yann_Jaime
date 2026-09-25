@@ -1,10 +1,10 @@
 title: "Iconic"
 theme: nature-morte
-image: "/images/works/nature-morte/iconic.webp"
+image: "/images/works/iconic/iconic.webp"
 gallery: []
 year: ""
 dimensions: ""
 technique: ""
 description: ""
 featured: false
-available: true
+visible: true

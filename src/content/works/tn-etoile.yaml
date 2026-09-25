@@ -1,10 +1,10 @@
 title: "Tours Nuages — Étoile"
 theme: bath
-image: "/images/works/bath/tn-etoile.webp"
+image: "/images/works/tn-etoile/tn-etoile.webp"
 gallery: []
 year: ""
 dimensions: ""
 technique: "Huile sur canevas"
 description: "Série Tours Nuages — Nanterre."
 featured: false
-available: true
+visible: true

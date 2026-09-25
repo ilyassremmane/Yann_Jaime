@@ -1,10 +1,10 @@
 title: "Sans titre"
 theme: portrait
-image: "/images/works/portrait/img-6374.webp"
+image: "/images/works/img-6374/img-6374.webp"
 gallery: []
 year: ""
 dimensions: ""
 technique: ""
 description: ""
 featured: false
-available: true
+visible: true

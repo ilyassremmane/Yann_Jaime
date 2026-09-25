@@ -1,10 +1,10 @@
 title: "Sans titre"
 theme: portrait
-image: "/images/works/portrait/img-e0261.webp"
+image: "/images/works/img-e0261/img-e0261.webp"
 gallery: []
 year: ""
 dimensions: ""
 technique: ""
 description: ""
 featured: false
-available: true
+visible: true

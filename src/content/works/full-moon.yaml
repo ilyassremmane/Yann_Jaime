@@ -1,10 +1,10 @@
 title: "Full Moon"
 theme: arch-fenetres-tours-nuages
-image: "/images/works/arch-fenetres-tours-nuages/full-moon.webp"
+image: "/images/works/full-moon/full-moon.webp"
 gallery: []
 year: "2024"
 dimensions: "92 × 73 × 2,5 cm"
 technique: "Huile sur canevas"
 description: "Série Tours Nuages — Nanterre."
 featured: true
-available: true
+visible: true

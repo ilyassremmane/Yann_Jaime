@@ -1,10 +1,10 @@
 title: "Psycho"
 theme: portrait
-image: "/images/works/portrait/psycho.webp"
+image: "/images/works/psycho/psycho.webp"
 gallery: []
 year: ""
 dimensions: ""
 technique: ""
 description: ""
 featured: false
-available: true
+visible: true

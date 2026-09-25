@@ -1,10 +1,10 @@
 title: "Influenceur"
 theme: nature
-image: "/images/works/nature/influenceur.webp"
+image: "/images/works/influenceur/influenceur.webp"
 gallery: []
 year: ""
 dimensions: ""
 technique: ""
 description: ""
 featured: false
-available: true
+visible: true

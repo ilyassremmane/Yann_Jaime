@@ -1,10 +1,10 @@
 title: "Duranton"
 theme: bath
-image: "/images/works/bath/duranton.webp"
+image: "/images/works/duranton/duranton.webp"
 gallery: []
 year: ""
 dimensions: ""
 technique: ""
 description: ""
 featured: false
-available: true
+visible: true

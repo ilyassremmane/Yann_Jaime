@@ -1,10 +1,10 @@
 title: "Last Drink"
 theme: grands-parents
-image: "/images/works/grands-parents/last-drink.webp"
+image: "/images/works/last-drink/last-drink.webp"
 gallery: []
 year: ""
 dimensions: ""
 technique: ""
 description: ""
 featured: false
-available: true
+visible: true
