@@ -71,64 +71,118 @@ const seoDescription = bio.length > 0 ? bio[0].slice(0, 180) : t.aboutPage.seoFa
         <div class="space-y-5 text-[0.95rem] leading-relaxed text-ink/80">
           {bio.map((paragraph) => <p>{paragraph}</p>)}
         </div>
-
-        <!-- Vidéo d'atelier : compacte, avec la légende à droite pour combler le bas de la colonne -->
-        {
-          (about.bioVideoMp4 || about.bioVideoWebm) && (
-            <figure class="mt-10 flex max-w-xl flex-col items-start gap-2 sm:flex-row sm:gap-5">
-              <video
-                controls
-                playsinline
-                preload="metadata"
-                poster={about.bioVideoPoster ?? undefined}
-                aria-label={t.aboutPage.videoLabel}
-                class="block w-64 shrink-0 rounded-sm bg-black sm:w-80"
-              >
-                {about.bioVideoWebm && <source src={about.bioVideoWebm} type="video/webm" />}
-                {about.bioVideoMp4 && <source src={about.bioVideoMp4} type="video/mp4" />}
-              </video>
-              <figcaption class="max-w-xs text-xs leading-relaxed text-clay sm:pt-1">
-                {about.bioVideoCaption || t.aboutPage.videoLabel}
-              </figcaption>
-            </figure>
-          )
-        }
       </div>
     </div>
 
-    <!-- Expositions : renvoie à la page dédiée -->
-    <section class="mt-16 border-t border-ink/10 pt-8">
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-baseline sm:justify-between">
-        <h2 class="eyebrow">{t.aboutPage.exhibitions}</h2>
-        <a
-          href={withLocale('/expositions', locale)}
-          class="link-underline text-xs uppercase tracking-[0.2em] text-ink"
-        >
-          {t.aboutPage.seeExhibitions}
-        </a>
+    <!-- Desktop : sous-sections (expositions + CV) à gauche, vidéo à droite ;
+         mobile : vidéo en premier, centrée et large. -->
+    <section class="mt-16 border-t border-ink/10 pt-10">
+      <div class="grid gap-10 lg:grid-cols-12 lg:gap-14">
+        <!-- Vidéo : centrée dans son bloc (mx-auto), collante en desktop -->
+        <div class="lg:order-2 lg:col-span-5">
+          {
+            (about.bioVideoMp4 || about.bioVideoWebm) && (
+              <figure
+                class="mx-auto w-full max-w-2xl lg:sticky lg:top-24 lg:max-w-md"
+                data-video-player
+              >
+                <div class="relative">
+                  <video
+                    controls
+                    playsinline
+                    preload="metadata"
+                    poster={about.bioVideoPoster ?? undefined}
+                    aria-label={t.aboutPage.videoLabel}
+                    class="block w-full rounded-sm bg-black"
+                  >
+                    {about.bioVideoWebm && <source src={about.bioVideoWebm} type="video/webm" />}
+                    {about.bioVideoMp4 && <source src={about.bioVideoMp4} type="video/mp4" />}
+                  </video>
+                  <!-- Point/bouton « lire » superposé (masqué dès que la vidéo démarre) -->
+                  <button
+                    type="button"
+                    data-video-play
+                    aria-label={t.aboutPage.videoPlay}
+                    class="group absolute inset-0 flex items-center justify-center"
+                  >
+                    <span
+                      class="flex h-14 w-14 items-center justify-center rounded-full bg-ink/65 text-canvas shadow-sm backdrop-blur-[2px] transition group-hover:scale-105 group-hover:bg-ink/80"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                        aria-hidden="true"
+                        class="ml-0.5 h-5 w-5"
+                      >
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    </span>
+                  </button>
+                </div>
+                <figcaption class="mt-2 text-center text-xs leading-relaxed text-clay">
+                  {about.bioVideoCaption || t.aboutPage.videoLabel}
+                </figcaption>
+              </figure>
+            )
+          }
+        </div>
+
+        <!-- Expositions + Prix / Formations / Expériences -->
+        <div class="lg:order-1 lg:col-span-7">
+          <!-- Expositions : renvoie à la page dédiée -->
+          <div
+            class="flex flex-col gap-2 border-b border-ink/10 pb-6 sm:flex-row sm:items-baseline sm:justify-between"
+          >
+            <h2 class="eyebrow">{t.aboutPage.exhibitions}</h2>
+            <a
+              href={withLocale('/expositions', locale)}
+              class="link-underline text-xs uppercase tracking-[0.2em] text-ink"
+            >
+              {t.aboutPage.seeExhibitions}
+            </a>
+          </div>
+
+          <!-- CV -->
+          {
+            cvSections.length > 0 && (
+              <div class="pt-8">
+                <h2 class="eyebrow mb-6">{about.cvTitle}</h2>
+                <div class="grid gap-x-8 gap-y-8 sm:grid-cols-2">
+                  {cvSections.map((section) => (
+                    <div>
+                      <h3 class="font-display text-xl text-ink">{section.title}</h3>
+                      <ul class="mt-4 space-y-2 text-sm leading-relaxed text-ink/75">
+                        {section.items.map((item) => (
+                          <li class="border-b border-ink/5 pb-2 last:border-0">{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          }
+        </div>
       </div>
     </section>
 
-    <!-- CV -->
-    {
-      cvSections.length > 0 && (
-        <section class="mt-16 border-t border-ink/10 pt-10">
-          <h2 class="eyebrow mb-8">{about.cvTitle}</h2>
-          <div class="grid gap-10 sm:grid-cols-2">
-            {cvSections.map((section) => (
-              <div>
-                <h3 class="font-display text-xl text-ink">{section.title}</h3>
-                <ul class="mt-4 space-y-2 text-sm leading-relaxed text-ink/75">
-                  {section.items.map((item) => (
-                    <li class="border-b border-ink/5 pb-2 last:border-0">{item}</li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </section>
-      )
-    }
+    <script>
+      // Bouton « lire » superposé à la vidéo d'atelier :
+      // cliquable sur toute la surface de la vidéo, masqué dès qu'elle démarre
+      // (et ré-affiché en cas de pause, pour relancer facilement sur mobile).
+      document.querySelectorAll('[data-video-player]').forEach((player) => {
+        const video = player.querySelector('video');
+        const button = player.querySelector('[data-video-play]');
+        if (!video || !button) return;
+        const sync = () => button.classList.toggle('hidden', !video.paused);
+        button.addEventListener('click', () => {
+          void video.play();
+        });
+        video.addEventListener('play', sync);
+        video.addEventListener('pause', sync);
+        sync();
+      });
+    </script>
 
     <!-- Contact (bas de page) -->
     <section class="mt-16 border-t border-ink/10 pt-8">

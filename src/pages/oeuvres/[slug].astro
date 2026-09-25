@@ -62,7 +62,7 @@ const structuredData = graph([
   title={work.title}
   description={seoDescription}
   image={work.image}
-  imageAlt={`${work.title}${work.year ? `, ${work.year}` : ''} — ${work.technique ?? t.explorer.available}`}
+  imageAlt={`${work.title}${work.year ? `, ${work.year}` : ''}${work.technique ? ` — ${work.technique}` : ''}`}
   type="article"
   structuredData={structuredData}
 >
@@ -136,10 +136,6 @@ const structuredData = graph([
           </div>
         )
       }
-
-      <p class="mt-6 text-xs uppercase tracking-[0.2em] text-black">
-        {work.available ? t.explorer.available : t.explorer.privateCollection}
-      </p>
 
       <a
         href={withLocale('/contact', locale)}

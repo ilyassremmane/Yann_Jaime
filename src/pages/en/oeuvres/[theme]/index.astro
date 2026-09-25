@@ -1,0 +1,20 @@
+---
+/**
+ * Liste d'une série — version anglaise (`/en/oeuvres/<theme>`).
+ * Réutilise la page française avec `locale="en"`.
+ */
+import Page from '../../../oeuvres/[theme].astro';
+import { getThemes } from '../../../../lib/content';
+
+export async function getStaticPaths() {
+  const themes = await getThemes();
+  return themes.map((theme) => ({
+    params: { theme: theme.slug },
+    props: { themeSlug: theme.slug },
+  }));
+}
+
+const { themeSlug } = Astro.props;
+---
+
+<Page themeSlug={themeSlug} locale="en" />

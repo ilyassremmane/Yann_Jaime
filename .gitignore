@@ -2,6 +2,8 @@
 dist/
 .output/
 .astro/
+# artefacts Netlify (fonctions SSR générées par @astrojs/netlify)
+.netlify/
 
 # dépendances
 node_modules/

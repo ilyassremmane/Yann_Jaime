@@ -33,6 +33,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
+    "@astrojs/netlify": "^6.6.5",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "chrome-remote-interface": "^0.34.0",

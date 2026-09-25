@@ -21,7 +21,11 @@ const ratio = size === 'large' ? 'aspect-[4/3]' : 'aspect-square';
 ---
 
 <article class="work-card group" style={`--card-delay: ${Math.min(index % 12, 11) * 55}ms`}>
-  <a href={withLocale(`/oeuvres/${work.slug}`, locale)} class="block focus-visible:outline-offset-4">
+  <a
+    href={withLocale(`/oeuvres/${work.theme}/${work.slug}`, locale)}
+    data-work-card={work.slug}
+    class="block focus-visible:outline-offset-4"
+  >
     <figure class="work-frame overflow-hidden">
       <div class={`${ratio} overflow-hidden bg-linen`}>
         {

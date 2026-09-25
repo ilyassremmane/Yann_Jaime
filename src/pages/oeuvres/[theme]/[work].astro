@@ -88,14 +88,17 @@ const structuredData = graph([
   title={work.title}
   description={seoDescription}
   image={work.image}
-  imageAlt={`${work.title}${work.year ? `, ${work.year}` : ''} — ${work.technique ?? t.explorer.available}`}
+  imageAlt={`${work.title}${work.year ? `, ${work.year}` : ''}${work.technique ? ` — ${work.technique}` : ''}`}
   type="article"
   structuredData={structuredData}
 >
-  <article class="bg-white text-black">
-    <div class="mx-auto max-w-4xl px-4 py-10 sm:px-8 sm:py-16">
+  <article class="bg-white text-black" data-work-page>
+    <!-- Bloc principal : image + cartel tiens sur un écran (desktop) -->
+    <div
+      class="mx-auto flex w-full max-w-6xl flex-col px-4 py-6 sm:px-8 lg:min-h-[calc(100svh-5rem)]"
+    >
       <nav
-      class="mb-8 text-center text-xs uppercase tracking-[0.2em] text-black/50"
+      class="mb-4 text-center text-xs uppercase tracking-[0.2em] text-black/50"
       aria-label={t.explorer.breadcrumbAria}
     >
       <a href={worksPath} class="link-underline hover:text-black">{t.nav.works}</a>
@@ -103,45 +106,64 @@ const structuredData = graph([
       <a href={themePath} class="link-underline hover:text-black">{themeName}</a>
     </nav>
 
-    <figure class="work-frame mx-auto max-w-3xl overflow-hidden">
-      {
-        work.image ? (
-          <img
-            src={work.image}
-            alt={`${work.title}${work.year ? `, ${work.year}` : ''}`}
-            class="w-full"
-            fetchpriority="high"
-            decoding="async"
-          />
-        ) : (
-          <div class="flex aspect-[4/3] items-center justify-center bg-neutral-100 text-xs uppercase tracking-[0.2em] text-black/50">
-            {t.explorer.comingSoon}
-          </div>
-        )
-      }
-    </figure>
+    <div class="grid flex-1 items-center gap-8 py-4 lg:grid-cols-12 lg:gap-14">
+      <!-- Image : à droite en desktop, au-dessus en mobile ; cliquable pour agrandir -->
+      <div class="order-1 lg:order-2 lg:col-span-8">
+        <figure class="work-frame mx-auto max-w-full">
+          {
+            work.image ? (
+              <button
+                type="button"
+                data-zoom-open
+                aria-label={t.explorer.zoomAria(work.title)}
+                class="group flex w-full cursor-zoom-in items-center justify-center focus-visible:outline-offset-4"
+              >
+                <img
+                  src={work.image}
+                  alt={`${work.title}${work.year ? `, ${work.year}` : ''}`}
+                  class="max-h-[58vh] w-auto max-w-full object-contain"
+                  fetchpriority="high"
+                  decoding="async"
+                />
+              </button>
+            ) : (
+              <div class="flex aspect-[4/3] items-center justify-center bg-neutral-100 text-xs uppercase tracking-[0.2em] text-black/50">
+                {t.explorer.comingSoon}
+              </div>
+            )
+          }
+          {
+            work.image && (
+              <figcaption class="mt-2 text-center text-[0.65rem] uppercase tracking-[0.2em] text-black/45">
+                {t.explorer.zoomHint}
+              </figcaption>
+            )
+          }
+        </figure>
+      </div>
 
-    <div class="mx-auto mt-10 max-w-2xl text-center">
-      <p class="eyebrow text-black">{themeName}</p>
+      <!-- Cartel : à gauche en desktop, sous l'image en mobile -->
+      <div class="order-2 text-left lg:order-1 lg:col-span-4">
+        <p class="eyebrow text-black">{themeName}</p>
       <h1 class="font-display mt-3 text-lg leading-tight text-black sm:text-xl">{work.title}</h1>
 
       {
         meta.length > 0 && (
-          <dl class="mt-6 space-y-1.5 border-t border-black/10 pt-5 text-sm">
+          <dl class="mt-5 space-y-1.5 border-t border-black/10 pt-4 text-sm">
             {work.technique && (
-              <div class="flex items-baseline justify-center gap-3">
+              <div class="flex items-baseline gap-3">
                 <dt class="text-black/50">{t.explorer.techniqueLabel}</dt>
                 <dd class="text-black">{work.technique}</dd>
               </div>
             )}
             {work.dimensions && (
-              <div class="flex items-baseline justify-center gap-3">
+              <div class="flex items-baseline gap-3">
                 <dt class="text-black/50">{t.explorer.dimensionsLabel}</dt>
                 <dd class="text-black">{work.dimensions}</dd>
               </div>
             )}
             {work.year && (
-              <div class="flex items-baseline justify-center gap-3">
+              <div class="flex items-baseline gap-3">
                 <dt class="text-black/50">{t.explorer.yearLabel}</dt>
                 <dd class="text-black">{work.year}</dd>
               </div>
@@ -160,16 +182,17 @@ const structuredData = graph([
         )
       }
 
-      <p class="mt-6 text-xs uppercase tracking-[0.2em] text-black">
-        {work.available ? t.explorer.available : t.explorer.privateCollection}
-      </p>
-
       <a
         href={withLocale('/contact', locale)}
         class="link-underline mt-8 inline-block text-xs uppercase tracking-[0.2em] text-black"
       >
         {t.explorer.requestInfo}
       </a>
+
+      <p class="mt-6 hidden text-[0.65rem] uppercase tracking-[0.2em] text-black/40 lg:block">
+        {t.explorer.keyboardHint}
+      </p>
+      </div>
     </div>
 
     {
@@ -182,13 +205,14 @@ const structuredData = graph([
     }
 
     <nav
-      class="mt-16 flex items-center justify-between gap-4 border-t border-black/10 pt-6 text-xs uppercase tracking-[0.2em]"
+      class="mt-8 flex items-center justify-between gap-4 border-t border-black/10 pt-5 text-xs uppercase tracking-[0.2em]"
       aria-label={t.explorer.imagesNavAria}
     >
-      <div class="flex items-center justify-between gap-4 pb-4">
+      <div class="flex w-full items-center justify-between gap-4 pb-4">
         {
           prev ? (
             <a
+              data-nav-prev
               href={withLocale(`/oeuvres/${theme.slug}/${prev.slug}`, locale)}
               class="link-underline max-w-[45%] text-black/60 hover:text-black"
             >
@@ -201,6 +225,7 @@ const structuredData = graph([
         {
           next ? (
             <a
+              data-nav-next
               href={withLocale(`/oeuvres/${theme.slug}/${next.slug}`, locale)}
               class="link-underline max-w-[45%] text-right text-black/60 hover:text-black"
             >
@@ -213,5 +238,117 @@ const structuredData = graph([
       </div>
     </nav>
     </div>
+
+    <!-- Visionneuse plein écran (clic sur l'image / Échap) -->
+    <div
+      data-zoom
+      hidden
+      class="fixed inset-0 z-[60] flex-col bg-ink/95 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-label={t.explorer.zoomAria(work.title)}
+    >
+      <div class="flex items-center justify-between gap-4 px-4 py-4 sm:px-8">
+        <p class="font-display truncate text-lg text-canvas">{work.title}</p>
+        <button
+          type="button"
+          data-zoom-close
+          class="shrink-0 rounded-full border border-canvas/30 px-3 py-1.5 text-[0.6rem] uppercase tracking-[0.2em] text-canvas transition-colors hover:border-canvas"
+          aria-label={t.explorer.closeAria}
+        >
+          {t.explorer.close}
+        </button>
+      </div>
+      <div class="flex flex-1 items-center justify-center overflow-hidden px-3 pb-6 sm:px-8">
+        <img data-zoom-img alt="" class="max-h-full max-w-full object-contain" />
+      </div>
+    </div>
+
+    <script>
+      import { navigate } from 'astro:transitions/client';
+
+      /* ── Visionneuse plein écran ── */
+      const zoomLayer = (page: HTMLElement) => page.querySelector<HTMLElement>('[data-zoom]');
+
+      const closeZoom = (page: HTMLElement) => {
+        const zoom = zoomLayer(page);
+        const image = zoom?.querySelector<HTMLImageElement>('[data-zoom-img]');
+        if (!zoom || !image || zoom.classList.contains('hidden')) return;
+        zoom.classList.add('hidden');
+        zoom.classList.remove('flex');
+        image.src = '';
+        document.documentElement.style.overflow = '';
+        page.querySelector<HTMLButtonElement>('[data-zoom-open]')?.focus();
+      };
+
+      const setup = () => {
+        const page = document.querySelector<HTMLElement>('[data-work-page]');
+        if (!page || page.dataset.navReady === '1') return;
+        page.dataset.navReady = '1';
+
+        const zoom = zoomLayer(page);
+        const zoomImage = zoom?.querySelector<HTMLImageElement>('[data-zoom-img]');
+
+        page.querySelectorAll<HTMLButtonElement>('[data-zoom-open]').forEach((button) => {
+          button.addEventListener('click', () => {
+            const image = button.querySelector('img');
+            if (!image || !zoom || !zoomImage) return;
+            zoomImage.src = image.currentSrc || image.src;
+            zoomImage.alt = image.alt;
+            zoom.classList.remove('hidden');
+            zoom.classList.add('flex');
+            document.documentElement.style.overflow = 'hidden';
+            zoom.querySelector<HTMLButtonElement>('[data-zoom-close]')?.focus();
+          });
+        });
+
+        // Un clic n'importe où dans la visionneuse (sauf l'image) la ferme.
+        zoom?.addEventListener('click', (event) => {
+          if (event.target !== zoomImage) closeZoom(page);
+        });
+      };
+
+      /* ── Navigation entre œuvres au clavier (← / →) ── */
+      let keysRegistered = false;
+      const registerKeys = () => {
+        if (keysRegistered) return;
+        keysRegistered = true;
+
+        window.addEventListener('keydown', (event) => {
+          const page = document.querySelector<HTMLElement>('[data-work-page]');
+          if (!page) return;
+
+          const zoom = zoomLayer(page);
+          if (zoom && !zoom.classList.contains('hidden')) {
+            if (event.key === 'Escape') closeZoom(page);
+            return;
+          }
+
+          if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
+          const target = event.target;
+          if (
+            target instanceof HTMLElement &&
+            target.closest('input, textarea, select, [contenteditable="true"]')
+          ) {
+            return;
+          }
+
+          if (event.key === 'ArrowLeft') {
+            const prev = page.querySelector<HTMLAnchorElement>('[data-nav-prev]');
+            if (prev) navigate(prev.href);
+          } else if (event.key === 'ArrowRight') {
+            const next = page.querySelector<HTMLAnchorElement>('[data-nav-next]');
+            if (next) navigate(next.href);
+          }
+        });
+      };
+
+      document.addEventListener('astro:page-load', () => {
+        setup();
+        registerKeys();
+      });
+      setup();
+      registerKeys();
+    </script>
   </article>
 </BaseLayout>

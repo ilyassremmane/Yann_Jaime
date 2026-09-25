@@ -1,7 +1,9 @@
 [build]
-  # Site 100 % statique : l'admin Keystatic (/keystatic) est désactivé au build
-  # car Netlify n'exécute pas l'adapter Node en mode standalone.
-  command = "npm run build:static"
+  # Admin Keystatic activé : les pages publiques sont pré-rendues en statique,
+  # /keystatic et /api/keystatic sont rendus à la demande via l'adapter
+  # @astrojs/netlify (Netlify Functions).
+  # (Variante 100 % statique sans admin : npm run build:static)
+  command = "npm run build"
   publish = "dist"
 
 [build.environment]

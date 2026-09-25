@@ -42,7 +42,10 @@ const ABOUT_VIDEOS_URL = '/videos/about';
  * chargé dans le navigateur par l'interface d'administration, où `process` n'existe pas.
  */
 const useGitHub = import.meta.env.PUBLIC_KEYSTATIC_STORAGE === 'github';
-const GITHUB_REPO = 'remmane/yann-jaime-portfolio';
+/**
+ * Dépôt GitHub utilisé en mode GitHub (édition en ligne depuis /keystatic).
+ */
+const GITHUB_REPO = 'ilyassremmane/Yann_Jaime';
 
 export default config({
   storage: useGitHub

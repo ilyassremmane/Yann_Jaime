@@ -6,6 +6,7 @@ import tailwind from '@astrojs/tailwind';
 import sitemap from '@astrojs/sitemap';
 import keystatic from '@keystatic/astro';
 import node from '@astrojs/node';
+import netlify from '@astrojs/netlify';
 
 /**
  * Le site public est généré en statique (SSG) : toutes les pages /oeuvres,
@@ -17,6 +18,14 @@ import node from '@astrojs/node';
  *   npm run build:static
  */
 const withoutAdmin = process.env.KEYSTATIC_DISABLED === '1';
+/*
+ * Choix de l'adapter selon la plateforme :
+ *  - Netlify (env NETLIFY=true) : @astrojs/netlify expose les routes à la
+ *    demande (/keystatic, /api/keystatic) en Netlify Functions.
+ *  - Ailleurs : serveur Node standalone (`node dist/server/entry.mjs`).
+ */
+const onNetlify = process.env.NETLIFY === 'true';
+const adapter = onNetlify ? netlify() : node({ mode: 'standalone' });
 
 // https://astro.build/config
 export default defineConfig({
@@ -34,7 +43,7 @@ export default defineConfig({
     routing: { prefixDefaultLocale: false },
   },
   output: 'static',
-  ...(withoutAdmin ? {} : { adapter: node({ mode: 'standalone' }) }),
+  ...(withoutAdmin ? {} : { adapter }),
   compressHTML: true,
   build: {
     inlineStylesheets: 'auto',

@@ -121,4 +121,322 @@ const structuredData = graph([
       )
     }
   </section>
+
+  <!-- ══ Visionneuse d’œuvre : clic sur une carte → fenêtre avec image + toutes les infos ══ -->
+  {
+    themeWorksFull.length > 0 && (
+      <>
+        <div
+          data-work-modal
+          hidden
+          class="fixed inset-0 z-50 flex-col bg-canvas/95 backdrop-blur-md"
+          role="dialog"
+          aria-modal="true"
+          aria-label={t.explorer.viewerAria(theme.title)}
+        >
+          <div class="flex items-center justify-between gap-4 border-b border-ink/10 px-4 py-4 sm:px-6">
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                data-modal-prev
+                aria-label={t.explorer.previousAria}
+                class="flex h-9 w-9 items-center justify-center rounded-full border border-ink/25 text-sm text-ink transition-colors hover:border-ink disabled:opacity-30"
+              >
+                ←
+              </button>
+              <button
+                type="button"
+                data-modal-next
+                aria-label={t.explorer.nextAria}
+                class="flex h-9 w-9 items-center justify-center rounded-full border border-ink/25 text-sm text-ink transition-colors hover:border-ink disabled:opacity-30"
+              >
+                →
+              </button>
+            </div>
+            <p class="hidden text-[0.65rem] uppercase tracking-[0.2em] text-ink/50 lg:block">
+              {t.explorer.keyboardHint}
+            </p>
+            <button
+              type="button"
+              data-modal-close
+              aria-label={t.explorer.closeAria}
+              class="shrink-0 rounded-full border border-ink/25 px-3 py-1.5 text-[0.6rem] uppercase tracking-[0.2em] text-ink transition-colors hover:border-ink"
+            >
+              {t.explorer.close}
+            </button>
+          </div>
+
+          <div data-modal-scroll class="flex flex-1 flex-col overflow-y-auto px-4 pb-6 sm:px-8">
+            {themeWorksFull.map((work: Work) => {
+              const desc = paragraphs(work.description);
+              return (
+                <div data-work-panel={work.slug} hidden class="mx-auto my-auto max-w-5xl py-6">
+                  <div class="grid items-center gap-8 lg:grid-cols-12 lg:gap-12">
+                    <div class="lg:col-span-7">
+                      <figure class="mx-auto">
+                        {work.image ? (
+                          <button
+                            type="button"
+                            data-zoom-open
+                            aria-label={t.explorer.zoomAria(work.title)}
+                            class="flex w-full cursor-zoom-in items-center justify-center focus-visible:outline-offset-4"
+                          >
+                            <img
+                              src={work.image}
+                              alt={`${work.title}${work.year ? `, ${work.year}` : ''}`}
+                              class="max-h-[62vh] w-auto max-w-full object-contain"
+                              loading="lazy"
+                              decoding="async"
+                            />
+                          </button>
+                        ) : (
+                          <div class="flex aspect-[4/3] items-center justify-center bg-ink/5 text-xs uppercase tracking-[0.2em] text-ink/50">
+                            {t.explorer.comingSoon}
+                          </div>
+                        )}
+                        {work.image && (
+                          <figcaption class="mt-2 text-center text-[0.65rem] uppercase tracking-[0.2em] text-ink/50">
+                            {t.explorer.zoomHint}
+                          </figcaption>
+                        )}
+                      </figure>
+                    </div>
+
+                    <div class="text-left lg:col-span-5">
+                      <p class="text-[0.65rem] uppercase tracking-[0.2em] text-ink/50">
+                        {theme.title}
+                      </p>
+                      <h2 class="font-display mt-2 text-xl text-ink sm:text-2xl">
+                        {work.title}
+                        {work.year && <span class="text-ink/60">, {work.year}</span>}
+                      </h2>
+
+                      <dl class="mt-5 space-y-1.5 border-t border-ink/15 pt-4 text-sm">
+                        {work.technique && (
+                          <div class="flex items-baseline gap-3">
+                            <dt class="text-ink/50">{t.explorer.techniqueLabel}</dt>
+                            <dd class="text-ink">{work.technique}</dd>
+                          </div>
+                        )}
+                        {work.dimensions && (
+                          <div class="flex items-baseline gap-3">
+                            <dt class="text-ink/50">{t.explorer.dimensionsLabel}</dt>
+                            <dd class="text-ink">{work.dimensions}</dd>
+                          </div>
+                        )}
+                        {work.year && (
+                          <div class="flex items-baseline gap-3">
+                            <dt class="text-ink/50">{t.explorer.yearLabel}</dt>
+                            <dd class="text-ink">{work.year}</dd>
+                          </div>
+                        )}
+                      </dl>
+
+                      {desc.length > 0 && (
+                        <div class="mt-5 space-y-3 text-[0.95rem] leading-relaxed text-ink/75">
+                          {desc.map((paragraph) => (
+                            <p>{paragraph}</p>
+                          ))}
+                        </div>
+                      )}
+
+                      <a
+                        href={withLocale('/contact', locale)}
+                        class="link-underline mt-6 inline-block text-xs uppercase tracking-[0.2em] text-ink"
+                      >
+                        {t.explorer.requestInfo}
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <!-- Zoom plein écran de la photo (clic sur l’image / Échap) -->
+        <div
+          data-zoom
+          hidden
+          class="fixed inset-0 z-[60] flex-col bg-canvas/95 backdrop-blur-md"
+          role="dialog"
+          aria-modal="true"
+          aria-label={t.explorer.viewLarge}
+        >
+          <div class="flex items-center justify-between gap-4 border-b border-ink/10 px-4 py-4 sm:px-8">
+            <p data-zoom-title class="font-display truncate text-lg text-ink" />
+            <button
+              type="button"
+              data-zoom-close
+              aria-label={t.explorer.closeAria}
+              class="shrink-0 rounded-full border border-ink/25 px-3 py-1.5 text-[0.6rem] uppercase tracking-[0.2em] text-ink transition-colors hover:border-ink"
+            >
+              {t.explorer.close}
+            </button>
+          </div>
+          <div class="flex flex-1 items-center justify-center overflow-hidden px-3 pb-6 sm:px-8">
+            <img data-zoom-img alt="" class="max-h-full max-w-full object-contain" />
+          </div>
+        </div>
+      </>
+    )
+  }
+
+    <script>
+      /* Visionneuse d’œuvre : modale au clic sur une carte, navigation ←/→,
+         zoom plein écran au clic sur la photo. Se ré-initialise à chaque
+         navigation douce (ClientRouter → astro:page-load). */
+      type ViewerApi = { onKey: (event: KeyboardEvent) => void };
+      let api: ViewerApi | null = null;
+
+      const init = () => {
+        const modal = document.querySelector<HTMLElement>('[data-work-modal]');
+        if (!modal) {
+          api = null;
+          document.documentElement.style.overflow = '';
+          return;
+        }
+        if (modal.dataset.ready === '1') return;
+        modal.dataset.ready = '1';
+
+        const zoom = document.querySelector<HTMLElement>('[data-zoom]');
+        const zoomImg = zoom?.querySelector<HTMLImageElement>('[data-zoom-img]');
+        const zoomTitle = zoom?.querySelector<HTMLElement>('[data-zoom-title]');
+        const scroll = modal.querySelector<HTMLElement>('[data-modal-scroll]');
+        const prevBtn = modal.querySelector<HTMLButtonElement>('[data-modal-prev]');
+        const nextBtn = modal.querySelector<HTMLButtonElement>('[data-modal-next]');
+        const closeBtn = modal.querySelector<HTMLButtonElement>('[data-modal-close]');
+        const cards = Array.from(document.querySelectorAll<HTMLAnchorElement>('a[data-work-card]'));
+        const panels = Array.from(modal.querySelectorAll<HTMLElement>('[data-work-panel]'));
+        const slugs = panels.map((panel) => panel.dataset.workPanel ?? '');
+        let opener: HTMLElement | null = null;
+
+        const isOpen = () => modal.classList.contains('flex');
+        const isZoomOpen = () => !!zoom && zoom.classList.contains('flex');
+
+        const show = (slug: string) => {
+          panels.forEach((panel) => {
+            panel.hidden = panel.dataset.workPanel !== slug;
+          });
+          modal.dataset.current = slug;
+          const index = slugs.indexOf(slug);
+          if (prevBtn) prevBtn.disabled = index <= 0;
+          if (nextBtn) nextBtn.disabled = index >= slugs.length - 1;
+          scroll?.scrollTo({ top: 0 });
+        };
+
+        const closeZoom = () => {
+          if (!isZoomOpen() || !zoom || !zoomImg) return;
+          zoom.classList.add('hidden');
+          zoom.classList.remove('flex');
+          zoomImg.src = '';
+          panels
+            .find((panel) => !panel.hidden)
+            ?.querySelector<HTMLButtonElement>('[data-zoom-open]')
+            ?.focus();
+        };
+
+        const open = (slug: string, trigger: HTMLElement) => {
+          opener = trigger;
+          show(slug);
+          modal.classList.remove('hidden');
+          modal.classList.add('flex');
+          document.documentElement.style.overflow = 'hidden';
+          closeBtn?.focus();
+        };
+
+        const close = () => {
+          if (!isOpen()) return;
+          closeZoom();
+          modal.classList.add('hidden');
+          modal.classList.remove('flex');
+          document.documentElement.style.overflow = '';
+          opener?.focus();
+          opener = null;
+        };
+
+        const openZoom = (panel: HTMLElement) => {
+          const image = panel
+            .querySelector<HTMLButtonElement>('[data-zoom-open]')
+            ?.querySelector('img');
+          if (!image || !zoom || !zoomImg) return;
+          zoomImg.src = image.currentSrc || image.src;
+          zoomImg.alt = image.alt;
+          if (zoomTitle) zoomTitle.textContent = image.alt;
+          zoom.classList.remove('hidden');
+          zoom.classList.add('flex');
+          zoom.querySelector<HTMLButtonElement>('[data-zoom-close]')?.focus();
+        };
+
+        // Clic sur une carte de la grille → ouvre la visionneuse (sans naviguer).
+        cards.forEach((card) => {
+          card.addEventListener('click', (event) => {
+            if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) {
+              return; // nouvel onglet (Ctrl/Clic) → on laisse le lien normal
+            }
+            const slug = card.dataset.workCard;
+            if (!slug) return;
+            event.preventDefault();
+            open(slug, card);
+          });
+        });
+
+        prevBtn?.addEventListener('click', () => {
+          const index = slugs.indexOf(modal.dataset.current ?? '');
+          if (index > 0) show(slugs[index - 1]);
+        });
+        nextBtn?.addEventListener('click', () => {
+          const index = slugs.indexOf(modal.dataset.current ?? '');
+          if (index >= 0 && index < slugs.length - 1) show(slugs[index + 1]);
+        });
+        closeBtn?.addEventListener('click', close);
+
+        // Clic dans le vide (bandeau ou marges) → ferme.
+        modal.addEventListener('click', (event) => {
+          if (event.target === modal || event.target === scroll) close();
+        });
+
+        panels.forEach((panel) => {
+          panel
+            .querySelector<HTMLButtonElement>('[data-zoom-open]')
+            ?.addEventListener('click', () => openZoom(panel));
+        });
+        zoom?.querySelector<HTMLButtonElement>('[data-zoom-close]')?.addEventListener('click', closeZoom);
+        zoom?.addEventListener('click', (event) => {
+          if (event.target === zoom || event.target === zoomImg) closeZoom();
+        });
+
+        api = {
+          onKey: (event) => {
+            if (!isOpen()) return;
+            if (event.key === 'Escape') {
+              event.preventDefault();
+              if (isZoomOpen()) closeZoom();
+              else close();
+              return;
+            }
+            if (isZoomOpen()) return;
+            if (event.altKey || event.ctrlKey || event.metaKey) return;
+            const target = event.target;
+            if (
+              target instanceof HTMLElement &&
+              target.closest('input, textarea, select, [contenteditable="true"]')
+            ) {
+              return;
+            }
+            if (event.key === 'ArrowLeft') {
+              event.preventDefault();
+              prevBtn?.click();
+            } else if (event.key === 'ArrowRight') {
+              event.preventDefault();
+              nextBtn?.click();
+            }
+          },
+        };
+      };
+
+      window.addEventListener('keydown', (event) => api?.onKey(event));
+      document.addEventListener('astro:page-load', init);
+      init();
+    </script>
 </BaseLayout>

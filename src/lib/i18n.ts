@@ -69,6 +69,8 @@ const fr = {
     zoom: 'Agrandir',
     zoomAria: (title: string) => `Agrandir « ${title} »`,
     viewLarge: 'Voir en grand',
+    keyboardHint: 'Flèches ← → : œuvre précédente / suivante',
+    zoomHint: 'Cliquer sur l’image pour l’agrandir',
     shown: (shown: number, total: number) =>
       `${shown} œuvre${shown > 1 ? 's' : ''} sur ${total} affichée${shown > 1 ? 's' : ''}`,
     showMore: (n: number) => `Afficher ${n} œuvre${n > 1 ? 's' : ''} de plus`,
@@ -97,6 +99,7 @@ const fr = {
       `${title}${year ? ` (${year})` : ''} — ${technique ?? 'peinture'} de Yann Jaime.`,
     workAria: (title: string) => `Œuvre : ${title}`,
     viewAlt: (title: string, n: number) => `${title} — vue ${n}`,
+    viewerAria: (title: string) => `${title} — fiche de l’œuvre`,
   },
 
   aboutPage: {
@@ -111,6 +114,7 @@ const fr = {
     seoFallback: 'Biographie de Yann Jaime, peintre.',
     portraitAlt: (name: string) => `Portrait de ${name}`,
     videoLabel: 'Vidéo d’atelier',
+    videoPlay: 'Lire la vidéo',
     seeExhibitions: 'Voir toutes les expositions →',
   },
 
@@ -209,6 +213,8 @@ const en: typeof fr = {
     zoom: 'View larger',
     zoomAria: (title: string) => `View “${title}” larger`,
     viewLarge: 'View larger',
+    keyboardHint: 'Arrow keys ← →: previous / next work',
+    zoomHint: 'Click the image to enlarge',
     shown: (shown: number, total: number) => `${shown} of ${total} works shown`,
     showMore: (n: number) => `Show ${n} more work${n > 1 ? 's' : ''}`,
     empty: 'No works in this theme yet.',
@@ -236,6 +242,7 @@ const en: typeof fr = {
       `${title}${year ? ` (${year})` : ''} — ${technique ?? 'painting'} by Yann Jaime.`,
     workAria: (title: string) => `Work: ${title}`,
     viewAlt: (title: string, n: number) => `${title} — view ${n}`,
+    viewerAria: (title: string) => `${title} — work details`,
   },
 
   aboutPage: {
@@ -250,6 +257,7 @@ const en: typeof fr = {
     seoFallback: 'Biography of Yann Jaime, painter.',
     portraitAlt: (name: string) => `Portrait of ${name}`,
     videoLabel: 'Studio video',
+    videoPlay: 'Play video',
     seeExhibitions: 'See all exhibitions →',
   },
 

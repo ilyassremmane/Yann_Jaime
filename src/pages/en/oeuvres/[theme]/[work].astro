@@ -1,0 +1,24 @@
+---
+/**
+ * Fiche d'œuvre d'une série — version anglaise (`/en/oeuvres/<theme>/<work>`).
+ * Réutilise la page française avec `locale="en"`.
+ */
+import Page from '../../../oeuvres/[theme]/[work].astro';
+import { getThemes, getWorks } from '../../../../lib/content';
+
+export async function getStaticPaths() {
+  const [themes, works] = await Promise.all([getThemes(), getWorks()]);
+  return themes.flatMap((theme) =>
+    works
+      .filter((work) => work.theme === theme.slug)
+      .map((work) => ({
+        params: { theme: theme.slug, work: work.slug },
+        props: { themeSlug: theme.slug, workSlug: work.slug },
+      }))
+  );
+}
+
+const { themeSlug, workSlug } = Astro.props;
+---
+
+<Page themeSlug={themeSlug} workSlug={workSlug} locale="en" />
