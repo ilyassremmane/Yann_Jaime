@@ -36,25 +36,26 @@ const DOCS_URL = '/documents/about';
 
 /**
  * Mode de stockage du contenu :
- *  - `local` (défaut) : écriture directe dans le dépôt, pour le développement.
- *  - `github` : édition en ligne depuis /keystatic, commits automatiques, pour la production.
+ *  - `local` : écriture directe dans le dépôt, sans authentification GitHub —
+ *    utilisé automatiquement pendant le développement (`npm run dev`).
+ *  - `github` : édition en ligne depuis /keystatic, commits automatiques —
+ *    utilisé dans tous les builds de production (Netlify, `npm run build`).
  *
- * Activé au build avec une variable publique (lisible aussi par le navigateur) :
- *   PUBLIC_KEYSTATIC_STORAGE=github npm run build
+ * `import.meta.env.DEV` est remplacé statiquement par Vite : `true` sur le
+ * serveur de dev, `false` au build — aucune variable d'environnement nécessaire.
  *
  * ⚠️ On utilise `import.meta.env` et non `process.env` : ce fichier est également
  * chargé dans le navigateur par l'interface d'administration, où `process` n'existe pas.
  */
-const useGitHub = import.meta.env.PUBLIC_KEYSTATIC_STORAGE === 'github';
 /**
  * Dépôt GitHub utilisé en mode GitHub (édition en ligne depuis /keystatic).
  */
 const GITHUB_REPO = 'ilyassremmane/Yann_Jaime';
 
 export default config({
-  storage: useGitHub
-    ? { kind: 'github', repo: GITHUB_REPO as `${string}/${string}` }
-    : { kind: 'local' },
+  storage: import.meta.env.DEV
+    ? { kind: 'local' }
+    : { kind: 'github', repo: GITHUB_REPO as `${string}/${string}` },
 
   ui: {
     brand: { name: 'Yann Jaime — Portfolio' },
