@@ -8,6 +8,12 @@
 
 [build.environment]
   NODE_VERSION = "24"
+  # Netlify scanne les valeurs des variables d'env dans les fichiers du repo.
+  # Ces deux variables sont publiques par conception (elles sont injectées dans
+  # le bundle client de Keystatic) et leurs valeurs ("github",
+  # "grant-repo-access") apparaissent légitimement dans le code → on les exclut
+  # du scan de secrets (voir docs Netlify SECRETS_SCAN_OMIT_KEYS).
+  SECRETS_SCAN_OMIT_KEYS = "PUBLIC_KEYSTATIC_STORAGE,PUBLIC_KEYSTATIC_GITHUB_APP_SLUG"
 
 # Astro génère des URL propres du type /a-propos/ (dossier + index.html),
 # Netlify les sert nativement — aucune règle redirect nécessaire.
