@@ -30,6 +30,10 @@ const THEME_COVERS_URL = '/images/themes';
 const ABOUT_VIDEOS_DIR = 'public/videos/about';
 const ABOUT_VIDEOS_URL = '/videos/about';
 
+/* Documents téléchargeables (portfolio, CV) — page À propos */
+const DOCS_DIR = 'public/documents/about';
+const DOCS_URL = '/documents/about';
+
 /**
  * Mode de stockage du contenu :
  *  - `local` (défaut) : écriture directe dans le dépôt, pour le développement.
@@ -431,6 +435,20 @@ export default config({
         experience: fields.array(fields.text({ label: 'Expérience' }), {
           label: 'Expériences professionnelles',
           itemLabel: (props) => props.value ?? 'Expérience',
+        }),
+        portfolioPdf: fields.file({
+          label: 'Portfolio (PDF)',
+          description:
+            'Dossier d’œuvres en PDF — affiche le bouton « Télécharger le portfolio » avant le bloc contact de la page À propos.',
+          directory: DOCS_DIR,
+          publicPath: `${DOCS_URL}/`,
+        }),
+        cvPdf: fields.file({
+          label: 'CV (PDF)',
+          description:
+            'CV de l’artiste en PDF — affiche le bouton « Télécharger le CV » avant le bloc contact de la page À propos.',
+          directory: DOCS_DIR,
+          publicPath: `${DOCS_URL}/`,
         }),
         contactIntro: fields.text({
           label: 'Texte de contact (bas de page)',

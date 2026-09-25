@@ -116,6 +116,8 @@ const fr = {
     videoLabel: 'Vidéo d’atelier',
     videoPlay: 'Lire la vidéo',
     seeExhibitions: 'Voir toutes les expositions →',
+    downloadPortfolio: 'Télécharger le portfolio',
+    downloadCv: 'Télécharger le CV',
   },
 
   contactPage: {
@@ -259,6 +261,8 @@ const en: typeof fr = {
     videoLabel: 'Studio video',
     videoPlay: 'Play video',
     seeExhibitions: 'See all exhibitions →',
+    downloadPortfolio: 'Download portfolio',
+    downloadCv: 'Download CV',
   },
 
   contactPage: {

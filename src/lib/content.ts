@@ -207,6 +207,9 @@ export type About = {
   training: string[];
   experience: string[];
   contactIntro: string | null;
+  /** Documents téléchargeables (PDF) — affichés avant le bloc contact. */
+  portfolioPdf: string | null;
+  cvPdf: string | null;
 };
 
 /* ------------------------------------------------------------------ */
@@ -505,6 +508,8 @@ export async function getAbout(locale: Locale = 'fr'): Promise<About> {
     training: [],
     experience: [],
     contactIntro: null,
+    portfolioPdf: null,
+    cvPdf: null,
     bioVideoMp4: null,
     bioVideoWebm: null,
     bioVideoPoster: null,
@@ -535,6 +540,8 @@ export async function getAbout(locale: Locale = 'fr'): Promise<About> {
     training: list(entry.training),
     experience: list(entry.experience),
     contactIntro: pick(locale, entry.contactIntro, entry.contactIntroEn),
+    portfolioPdf: filled(entry.portfolioPdf),
+    cvPdf: filled(entry.cvPdf),
   };
 }
 
