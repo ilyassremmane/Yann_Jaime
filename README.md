@@ -44,10 +44,10 @@ les modifications sont écrites directement dans les fichiers du projet).
 redimensionne, compresse et range le résultat :
 
 ```
-<source>/<THEME>/photo.jpg
-  → public/images/works/<theme>/photo.webp          1920 px max, qualité 80
-  → public/images/works/thumbs/<theme>/photo.webp    720 px max, qualité 72
-  → src/data/images-manifest.json                    inventaire (poids, dimensions)
+<source>/<THEME>/paradise.jpg
+  → public/images/works/<theme>/paradise/paradise.webp         1920 px max, qualité 80
+  → public/images/works/thumbs/<theme>/paradise/paradise.webp   720 px max, qualité 72
+  → src/data/images-manifest.json                               inventaire (poids, dimensions)
 ```
 
 Source par défaut : `/Users/remmane/Desktop/media/web/Yann_sources/PEINTURES`.
@@ -80,10 +80,16 @@ L’artiste gère tout son site sans toucher au code :
 
 | Contenu | Où | Champs |
 | --- | --- | --- |
-| **Collection « Œuvres »** | `src/content/works/*.yaml` | Titre (slug auto), **Thème** (sélecteur), Image principale, Images secondaires, Année, Dimensions, Technique, Description, Mise en avant, Disponibilité |
+| **Collections « Œuvres »** (une par thème) | `src/content/works/<thème>/*.yaml` | Titre (slug auto), Image principale, Images secondaires, Année, Dimensions, Technique, Description (fr/en), Mise en avant, Couverture du thème, Visibilité |
+| **Thèmes** | `src/content/themes/*.yaml` | Titre, accroche, image de couverture, texte de présentation, Visibilité |
 | **Accueil** (singleton) | `src/content/homepage/index.yaml` | Titre et sous-titre du hero, **photo ou vidéo** principale, légende, texte d’introduction, sélection d’œuvres, libellé du lien |
 | **À propos** (singleton) | `src/content/about/index.yaml` | Portrait, légende, biographie, citation, CV (expositions, prix, formations, expériences) |
 | **Paramètres globaux** (singleton) | `src/content/settings/index.yaml` | Nom du site, accroche, description SEO, image de partage, e-mail, téléphone, lieu, réseaux sociaux, pied de page |
+
+> **Rangement des œuvres** : le thème est donné par le dossier de la fiche
+> (`src/content/works/<thème>/<slug>.yaml`, une collection Keystatic par thème) et les
+> images de l'œuvre vivent dans `public/images/works/<thème>/<slug>/`. Ajouter un thème
+> demande donc d'ajouter la collection correspondante dans `keystatic.config.ts`.
 
 ### Mode « local » (développement) — actif par défaut
 
@@ -103,7 +109,8 @@ KEYSTATIC_STORAGE=github npm run build
 
 L’interface `/keystatic` permet alors de publier depuis un navigateur : chaque enregistrement
 crée un commit, avec relecture possible avant publication. Les images téléversées arrivent
-dans `public/images/works/`.
+dans `public/images/works/<thème>/<slug-de-l'œuvre>/` (le thème est fixé par la collection,
+le dossier par le slug de l'œuvre).
 
 > En production, le stockage `local` n’est pas disponible (il nécessite le serveur de
 > développement) : le mode GitHub prend le relais.
@@ -127,7 +134,7 @@ dans `public/images/works/`.
 │   ├── lib/content.ts        # lecture typée du contenu (reader Keystatic)
 │   ├── pages/                # index, oeuvres/, a-propos, contact, 404
 │   └── styles/global.css     # palette, fond « grain de toile », typographie
-└── public/images/works/      # images optimisées (par thème + vignettes)
+└── public/images/works/      # images optimisées (works/<thème>/<œuvre>/ + thumbs/…)
 ```
 
 ## Design

@@ -57,7 +57,7 @@ const structuredData = graph([
     id: locale === 'en' ? '/en/#accueil' : '/#accueil',
     locale,
     items: highlight.map((work) => ({
-      url: withLocale(`/oeuvres/${work.slug}`, locale),
+      url: withLocale(`/oeuvres/${work.theme}/${work.slug}`, locale),
       name: work.title,
       image: work.image || undefined,
     })),

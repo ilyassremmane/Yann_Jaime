@@ -8,8 +8,10 @@
  *
  *   source :  <SOURCE>/<THEME>/*.jpg|jpeg|png|webp|tif|heic
  *             ou <SOURCE>/*.jpg… si le dossier ne contient pas de sous-dossiers
- *   sortie :  public/images/works/<theme>/<slug>.webp        (max 1920 px, q80)
- *             public/images/works/thumbs/<theme>/<slug>.webp (max  720 px, q72)
+ *   sortie :  public/images/works/<theme>/<slug>/<slug>.webp         (max 1920 px, q80)
+ *             public/images/works/thumbs/<theme>/<slug>/<slug>.webp  (max  720 px, q72)
+ *             (un dossier par œuvre : c'est le rangement qu'impose le CMS,
+ *              chaque œuvre ayant ses images dans son propre dossier)
  *
  * Usage :
  *   npm run images:optimize
@@ -150,14 +152,19 @@ async function optimizeFile(filePath, themeSlug, results) {
   // Chemin réellement lisible par sharp (conversion HEIC → JPEG si nécessaire)
   const readablePath = await toReadablePath(filePath);
 
-  const fullDir = path.join(OUT_BASE, themeSlug);
-  const thumbDir = path.join(OUT_BASE, 'thumbs', themeSlug);
+  /*
+   * Rangement imposé par le CMS : dossier du thème puis dossier de l'œuvre.
+   * Un dossier source plat (expositions…) reste à la racine du dossier de sortie.
+   */
+  const parts = themeSlug ? [themeSlug, slug] : [];
+  const fullDir = path.join(OUT_BASE, ...parts);
+  const thumbDir = path.join(OUT_BASE, 'thumbs', ...parts);
   await mkdir(fullDir, { recursive: true });
   await mkdir(thumbDir, { recursive: true });
 
-  /** URL publique d'un fichier produit (thème facultatif pour les dossiers plats). */
-  const urlFor = (...segments) =>
-    [OUT_URL, ...segments.filter(Boolean), `${slug}.webp`].join('/');
+  /** URL publique d'un fichier produit (`thumbs` = vignette). */
+  const urlFor = (prefix) =>
+    [OUT_URL, prefix, ...parts, `${slug}.webp`].filter(Boolean).join('/');
 
   const base = sharp(readablePath, { failOn: 'none' }).rotate();
   const meta = await base.metadata();
@@ -183,8 +190,8 @@ async function optimizeFile(filePath, themeSlug, results) {
   results.push({
     theme: themeSlug || null,
     source: sourceName,
-    file: urlFor(themeSlug),
-    thumb: urlFor('thumbs', themeSlug),
+    file: urlFor(),
+    thumb: urlFor('thumbs'),
     width: full.width,
     height: full.height,
     bytes: full.size,
@@ -194,7 +201,7 @@ async function optimizeFile(filePath, themeSlug, results) {
   });
 
   console.log(
-    `  ✓ ${themeSlug}/${slug}.webp  ${(full.size / 1024).toFixed(0)} Ko` +
+    `  ✓ ${path.relative(OUT_BASE, fullPath)}  ${(full.size / 1024).toFixed(0)} Ko` +
       `  (source ${((await stat(filePath)).size / 1024 / 1024).toFixed(1)} Mo, ${meta.width}×${meta.height})`
   );
 }

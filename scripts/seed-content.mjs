@@ -5,6 +5,10 @@
  * Crée les fiches YAML de la collection « Œuvres » à partir du manifeste
  * produit par `npm run images:optimize`.
  *
+ * Chaque fiche est rangée dans le dossier de son thème
+ * (`src/content/works/<thème>/<slug>.yaml`) : le thème d'une œuvre est désormais
+ * donné par son dossier, qui correspond à une collection Keystatic.
+ *
  * Les métadonnées connues du portfolio 2021-2026 (titre, année, technique,
  * dimensions) sont pré-remplies ; les autres images reçoivent un titre lisible
  * déduit du nom de fichier, à compléter ensuite dans /keystatic.
@@ -23,6 +27,16 @@ const ROOT = path.resolve(__dirname, '..');
 const MANIFEST = path.join(ROOT, 'src', 'data', 'images-manifest.json');
 const OUT_DIR = path.join(ROOT, 'src', 'content', 'works');
 const FORCE = process.argv.includes('--force');
+
+/** Thèmes ayant une collection dans keystatic.config.ts. */
+const KNOWN_THEMES = new Set([
+  'arch-fenetres-tours-nuages',
+  'bath',
+  'grands-parents',
+  'nature',
+  'nature-morte',
+  'portrait',
+]);
 
 /**
  * Métadonnées confirmées (dossier « Portfolio 2021-2026 »).
@@ -226,7 +240,6 @@ const str = (value) => JSON.stringify(value);
 function yamlDoc(work) {
   const lines = [
     `title: ${str(work.title)}`,
-    `theme: ${work.theme}`,
     `image: ${str(work.image)}`,
     'gallery: []',
     `year: ${str(work.year ?? '')}`,
@@ -234,7 +247,8 @@ function yamlDoc(work) {
     `technique: ${str(work.technique ?? '')}`,
     `description: ${str(work.description ?? '')}`,
     `featured: ${work.featured ? 'true' : 'false'}`,
-    `available: ${work.available === false ? 'false' : 'true'}`,
+    'isThemeCover: false',
+    'visible: true',
   ];
   return `${lines.join('\n')}\n`;
 }
@@ -267,10 +281,17 @@ async function main() {
     }
     seen.add(slug);
 
+    /* Thème = collection du CMS ; sans lui, la fiche n'a pas de dossier. */
+    const theme = item.theme ?? null;
+    if (!theme || !KNOWN_THEMES.has(theme)) {
+      skipped.push(`${item.source} (thème inconnu du CMS : ${theme ?? 'aucun'})`);
+      continue;
+    }
+
     const curated = CURATED[slug] ?? {};
     const work = {
       title: curated.title ?? titleFromFilename(item.source),
-      theme: item.theme,
+      theme,
       image: item.file,
       year: curated.year,
       dimensions: curated.dimensions,
@@ -280,7 +301,7 @@ async function main() {
       available: true,
     };
 
-    const target = path.join(OUT_DIR, `${slug}.yaml`);
+    const target = path.join(OUT_DIR, theme, `${slug}.yaml`);
     try {
       await readFile(target);
       if (!FORCE) {
@@ -291,8 +312,9 @@ async function main() {
       /* le fichier n'existe pas encore : on l'écrit */
     }
 
+    await mkdir(path.dirname(target), { recursive: true });
     await writeFile(target, yamlDoc(work), 'utf8');
-    written.push(slug);
+    written.push(`${theme}/${slug}`);
   }
 
   console.log(`${written.length} fiche(s) créée(s) dans ${OUT_DIR}`);

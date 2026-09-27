@@ -299,11 +299,6 @@ details[data-mobile-menu][open] .mobile-panel {
   animation-delay: var(--card-delay, 0ms);
 }
 
-/* Œuvres non encore affichées (voir WorksExplorer) */
-.is-deferred {
-  display: none;
-}
-
 /* Images : fondu à l'arrivée (évite l'apparition brutale) */
 img[data-fade] {
   opacity: 0;

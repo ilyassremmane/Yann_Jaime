@@ -19,8 +19,12 @@ export const THEMES = [
 export type ThemeValue = (typeof THEMES)[number]['value'];
 
 /** Dossiers publics des médias (un dossier par famille de contenus). */
-const IMAGES_DIR = 'public/images/works';
-const IMAGES_URL = '/images/works';
+const WORKS_DIR = 'public/images/works';
+const WORKS_URL = '/images/works';
+const HOME_DIR = 'public/images/home';
+const HOME_URL = '/images/home';
+const SHARE_DIR = 'public/images/share';
+const SHARE_URL = '/images/share';
 const ABOUT_DIR = 'public/images/about';
 const ABOUT_URL = '/images/about';
 const EXPO_DIR = 'public/images/expositions';
@@ -52,6 +56,90 @@ const DOCS_URL = '/documents/about';
  */
 const GITHUB_REPO = 'ilyassremmane/Yann_Jaime';
 
+/**
+ * Schéma commun aux six collections d'œuvres (une par thème).
+ *
+ * Le dossier d'images est propre au thème : l'admin Keystatic ajoute le slug de
+ * l'entrée, ce qui donne `public/images/works/<thème>/<œuvre>/<fichier>`.
+ * La couverture du thème est choisie depuis l'œuvre (`isThemeCover`) : une
+ * relation unique ne peut pas viser six collections à la fois.
+ */
+function worksSchema(theme: ThemeValue) {
+  const directory = `${WORKS_DIR}/${theme}`;
+  const publicPath = `${WORKS_URL}/${theme}/`;
+
+  return {
+    title: fields.slug({
+      name: {
+        label: 'Titre',
+        description: 'Titre affiché de l’œuvre, dans sa langue d’origine.',
+        validation: { isRequired: true },
+      },
+    }),
+    titleEn: fields.text({
+      label: 'Titre (anglais)',
+      description: 'Version anglaise du titre. Vide = on affiche le titre français.',
+    }),
+    image: fields.image({
+      label: 'Image principale',
+      description: 'Visuel de référence de l’œuvre.',
+      directory,
+      publicPath,
+      validation: { isRequired: true },
+    }),
+    gallery: fields.array(
+      fields.image({
+        label: 'Image',
+        directory,
+        publicPath,
+      }),
+      {
+        label: 'Images secondaires',
+        description: 'Détails, vues d’accrochage, étapes de travail…',
+        itemLabel: (props) => props.value?.filename ?? 'Image secondaire',
+      }
+    ),
+    year: fields.text({
+      label: 'Année',
+      description: 'Ex. 2024',
+    }),
+    dimensions: fields.text({
+      label: 'Dimensions',
+      description: 'Ex. 102 × 73 × 2,5 cm',
+    }),
+    technique: fields.text({
+      label: 'Technique',
+      description: 'Ex. Huile sur canevas',
+    }),
+    description: fields.text({
+      label: 'Description',
+      description: 'Une ligne vide crée un nouveau paragraphe.',
+      multiline: true,
+    }),
+    descriptionEn: fields.text({
+      label: 'Description (anglais)',
+      description: 'Version anglaise. Vide = on affiche la description française.',
+      multiline: true,
+    }),
+    featured: fields.checkbox({
+      label: 'Mettre en avant',
+      description: 'Proposer l’œuvre dans la sélection éditoriale.',
+      defaultValue: false,
+    }),
+    isThemeCover: fields.checkbox({
+      label: 'Couverture du thème',
+      description:
+        'Affiche cette œuvre en couverture de la carte du thème sur /oeuvres (une seule œuvre par thème).',
+      defaultValue: false,
+    }),
+    visible: fields.checkbox({
+      label: 'Afficher cette œuvre sur le site',
+      description: 'Décocher retire l’œuvre du site public (listes, pages détail, sélection d’accueil).',
+      defaultValue: true,
+    }),
+  };
+}
+
 export default config({
   storage: import.meta.env.DEV
     ? { kind: 'local' }
@@ -60,7 +148,16 @@ export default config({
   ui: {
     brand: { name: 'Yann Jaime — Portfolio' },
     navigation: {
-      Portfolio: ['themes', 'works', 'expositions'],
+      Portfolio: [
+        'themes',
+        'works-arch-fenetres-tours-nuages',
+        'works-bath',
+        'works-grands-parents',
+        'works-nature',
+        'works-nature-morte',
+        'works-portrait',
+        'expositions',
+      ],
       'Pages uniques': ['homepage', 'about', 'settings'],
     },
   },
@@ -99,14 +196,10 @@ export default config({
         }),
         cover: fields.image({
           label: 'Image de couverture',
-          description: "Visuel de la carte du thème sur /oeuvres. Sinon la première œuvre du thème l'illustre.",
+          description:
+            "Visuel de la carte du thème sur /oeuvres. Sinon, c'est l'œuvre cochée « Couverture du thème » qui l'illustre.",
           directory: THEME_COVERS_DIR,
           publicPath: `${THEME_COVERS_URL}/`,
-        }),
-        coverWork: fields.relationship({
-          label: '… ou œuvre de couverture',
-          description: "Alternative : utilise l'image d'une œuvre existante comme couverture.",
-          collection: 'works',
         }),
         intro: fields.text({
           label: 'Texte de présentation',
@@ -128,83 +221,62 @@ export default config({
     /* ---------------------------------------------------------------- */
     /* ŒUVRES                                                           */
     /* ---------------------------------------------------------------- */
-    works: collection({
-      label: 'Œuvres',
+    /* Une collection par thème : l'admin Keystatic range les images d'une
+       entrée dans le dossier <slug> de sa collection — chaque thème possède
+       donc son propre dossier public/images/works/<thème>/<œuvre>/. */
+    'works-arch-fenetres-tours-nuages': collection({
+      label: 'Œuvres — Architectures',
       slugField: 'title',
-      path: 'src/content/works/*',
+      path: 'src/content/works/arch-fenetres-tours-nuages/*',
       format: { data: 'yaml' },
-      columns: ['title', 'theme', 'year'],
+      columns: ['title', 'year'],
       entryLayout: 'content',
-      schema: {
-        title: fields.slug({
-          name: {
-            label: 'Titre',
-            description: 'Titre affiché de l’œuvre, dans sa langue d’origine.',
-            validation: { isRequired: true },
-          },
-        }),
-        titleEn: fields.text({
-          label: 'Titre (anglais)',
-          description: 'Version anglaise du titre. Vide = on affiche le titre français.',
-        }),
-        theme: fields.relationship({
-          label: 'Thème',
-          description: 'Thème de rattachement : détermine la sous-page du thème où apparaît l’œuvre.',
-          collection: 'themes',
-          validation: { isRequired: true },
-        }),
-        image: fields.image({
-          label: 'Image principale',
-          description: 'Visuel de référence de l’œuvre.',
-          directory: IMAGES_DIR,
-          publicPath: `${IMAGES_URL}/`,
-          validation: { isRequired: true },
-        }),
-        gallery: fields.array(
-          fields.image({
-            label: 'Image',
-            directory: IMAGES_DIR,
-            publicPath: `${IMAGES_URL}/`,
-          }),
-          {
-            label: 'Images secondaires',
-            description: 'Détails, vues d’accrochage, étapes de travail…',
-            itemLabel: (props) => props.value?.filename ?? 'Image secondaire',
-          }
-        ),
-        year: fields.text({
-          label: 'Année',
-          description: 'Ex. 2024',
-        }),
-        dimensions: fields.text({
-          label: 'Dimensions',
-          description: 'Ex. 102 × 73 × 2,5 cm',
-        }),
-        technique: fields.text({
-          label: 'Technique',
-          description: 'Ex. Huile sur canevas',
-        }),
-        description: fields.text({
-          label: 'Description',
-          description: 'Une ligne vide crée un nouveau paragraphe.',
-          multiline: true,
-        }),
-        descriptionEn: fields.text({
-          label: 'Description (anglais)',
-          description: 'Version anglaise. Vide = on affiche la description française.',
-          multiline: true,
-        }),
-        featured: fields.checkbox({
-          label: 'Mettre en avant',
-          description: 'Proposer l’œuvre dans la sélection éditoriale.',
-          defaultValue: false,
-        }),
-        visible: fields.checkbox({
-          label: 'Afficher cette œuvre sur le site',
-          description: 'Décocher retire l’œuvre du site public (listes, pages détail, sélection d’accueil).',
-          defaultValue: true,
-        }),
-      },
+      schema: worksSchema('arch-fenetres-tours-nuages'),
+    }),
+    'works-bath': collection({
+      label: 'Œuvres — Bath',
+      slugField: 'title',
+      path: 'src/content/works/bath/*',
+      format: { data: 'yaml' },
+      columns: ['title', 'year'],
+      entryLayout: 'content',
+      schema: worksSchema('bath'),
+    }),
+    'works-grands-parents': collection({
+      label: 'Œuvres — Grands-parents',
+      slugField: 'title',
+      path: 'src/content/works/grands-parents/*',
+      format: { data: 'yaml' },
+      columns: ['title', 'year'],
+      entryLayout: 'content',
+      schema: worksSchema('grands-parents'),
+    }),
+    'works-nature': collection({
+      label: 'Œuvres — Nature',
+      slugField: 'title',
+      path: 'src/content/works/nature/*',
+      format: { data: 'yaml' },
+      columns: ['title', 'year'],
+      entryLayout: 'content',
+      schema: worksSchema('nature'),
+    }),
+    'works-nature-morte': collection({
+      label: 'Œuvres — Nature morte',
+      slugField: 'title',
+      path: 'src/content/works/nature-morte/*',
+      format: { data: 'yaml' },
+      columns: ['title', 'year'],
+      entryLayout: 'content',
+      schema: worksSchema('nature-morte'),
+    }),
+    'works-portrait': collection({
+      label: 'Œuvres — Portrait',
+      slugField: 'title',
+      path: 'src/content/works/portrait/*',
+      format: { data: 'yaml' },
+      columns: ['title', 'year'],
+      entryLayout: 'content',
+      schema: worksSchema('portrait'),
     }),
 
     /* ---------------------------------------------------------------- */
@@ -318,8 +390,8 @@ export default config({
         heroImage: fields.image({
           label: 'Photo principale',
           description: 'Image affichée en grand sur l’accueil.',
-          directory: IMAGES_DIR,
-          publicPath: `${IMAGES_URL}/`,
+          directory: HOME_DIR,
+          publicPath: `${HOME_URL}/`,
         }),
         heroVideoUrl: fields.text({
           label: 'Vidéo principale (URL ou fichier)',
@@ -500,8 +572,8 @@ export default config({
         }),
         shareImage: fields.image({
           label: 'Image de partage (réseaux sociaux)',
-          directory: IMAGES_DIR,
-          publicPath: `${IMAGES_URL}/`,
+          directory: SHARE_DIR,
+          publicPath: `${SHARE_URL}/`,
         }),
         email: fields.text({
           label: 'E-mail',

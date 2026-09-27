@@ -18,20 +18,23 @@ export type Theme = {
   title: string;
   tagline: string | null;
   cover: string | null;
-  /** Slug de l'œuvre de couverture choisie dans le CMS (sans image téléversée). */
-  coverWork: string | null;
   intro: string | null;
   /** Faux = thème masqué (et toutes ses œuvres) sur le site public. */
   visible: boolean;
 };
 
+/**
+ * Couvertures historiques : dernier repli quand le thème n'a ni image
+ * téléversée ni œuvre cochée « Couverture du thème ».
+ */
 const FALLBACK_COVERS: Record<string, string> = {
-  'arch-fenetres-tours-nuages': '/images/works/arch-fenetres-tours-nuages/paradise-en-cours.webp',
-  bath: '/images/works/bath/bains.webp',
-  'grands-parents': '/images/works/grands-parents/autoroute.webp',
-  nature: '/images/works/nature/foret.webp',
-  'nature-morte': '/images/works/nature-morte/breakfast.webp',
-  portrait: '/images/works/portrait/em-portrait.webp',
+  'arch-fenetres-tours-nuages':
+    '/images/works/arch-fenetres-tours-nuages/paradise-en-cours/paradise-en-cours.webp',
+  bath: '/images/works/bath/bains/bains.webp',
+  'grands-parents': '/images/works/grands-parents/autoroute/autoroute.webp',
+  nature: '/images/works/nature/foret/foret.webp',
+  'nature-morte': '/images/works/nature-morte/breakfast/breakfast.webp',
+  portrait: '/images/works/portrait/em-portrait/em-portrait.webp',
 };
 
 /**
@@ -53,18 +56,6 @@ export async function getThemes(locale: Locale = 'fr'): Promise<Theme[]> {
     if (!slugs.includes(slug as ThemeValue)) slugs.push(slug as ThemeValue);
   }
 
-  const rawCache = new Map<string, string>();
-  const rawYaml = (slug: string): string => {
-    if (!rawCache.has(slug)) {
-      try {
-        rawCache.set(slug, readFileSync(path.join(process.cwd(), 'src', 'content', 'themes', `${slug}.yaml`), 'utf8'));
-      } catch {
-        rawCache.set(slug, '');
-      }
-    }
-    return rawCache.get(slug) ?? '';
-  };
-
   const themes = slugs.map((slug) => {
     const entry = (bySlug.get(slug) ?? {}) as {
       title?: string;
@@ -77,8 +68,6 @@ export async function getThemes(locale: Locale = 'fr'): Promise<Theme[]> {
       visible?: boolean | null;
     };
     const historic = THEMES.find((theme) => theme.value === slug);
-    const yaml = rawYaml(slug);
-    const coverWorkMatch = yaml.match(/^coverWork:\s*(.+)\s*$/m);
     return {
       slug,
       title:
@@ -87,7 +76,6 @@ export async function getThemes(locale: Locale = 'fr'): Promise<Theme[]> {
         slug,
       tagline: pick(locale, entry.tagline, entry.taglineEn),
       cover: filled(entry.cover) ?? FALLBACK_COVERS[slug] ?? null,
-      coverWork: coverWorkMatch?.[1]?.trim() || null,
       intro: pick(locale, entry.intro, entry.introEn),
       /* Absent du YAML (avant la case « Afficher ») = visible. */
       visible: entry.visible !== false,
@@ -100,18 +88,23 @@ export async function getThemes(locale: Locale = 'fr'): Promise<Theme[]> {
 /**
  * Couverture d'un thème depuis le CMS :
  * 1. image de couverture téléversée,
- * 2. sinon image de l'œuvre de couverture choisie,
- * 3. sinon première œuvre du thème,
+ * 2. sinon image de l'œuvre cochée « Couverture du thème »,
+ * 3. sinon image de la première œuvre du thème,
  * 4. sinon visuel historique.
  */
-export async function themeCover(theme: { slug: string; cover: string | null; coverWork?: string | null }, works?: Work[]): Promise<string | null> {
+export async function themeCover(
+  theme: { slug: string; cover: string | null },
+  works?: Work[]
+): Promise<string | null> {
   if (theme.cover) return theme.cover;
   const all = works ?? (await getWorks());
-  if (theme.coverWork) {
-    const found = all.find((work) => work.slug === theme.coverWork);
-    if (found?.image) return found.image;
-  }
-  return all.find((work) => work.theme === theme.slug)?.image ?? FALLBACK_COVERS[theme.slug] ?? null;
+  const ofTheme = all.filter((work) => work.theme === theme.slug && work.image);
+  return (
+    ofTheme.find((work) => work.isThemeCover)?.image ??
+    ofTheme[0]?.image ??
+    FALLBACK_COVERS[theme.slug] ??
+    null
+  );
 }
 
 /** Un thème par son slug (repli historique si absent du CMS). */
@@ -126,7 +119,7 @@ export const reader = createReader(process.cwd(), keystaticConfig);
 export type Work = {
   slug: string;
   title: string;
-  /** Slug du thème (relation vers la collection `themes`). */
+  /** Thème de l'œuvre : le dossier (et donc la collection) où elle est rangée. */
   theme: string;
   image: string;
   gallery: string[];
@@ -135,6 +128,8 @@ export type Work = {
   technique: string | null;
   description: string | null;
   featured: boolean;
+  /** Vrai = œuvre choisie pour couvrir la carte de son thème sur /oeuvres. */
+  isThemeCover: boolean;
   /** Faux = œuvre masquée sur le site public (case « Afficher » du CMS). */
   visible: boolean;
 };
@@ -319,13 +314,24 @@ export function thumbFor(image: string): string {
 
 type ManifestEntry = { file?: string; width?: number; height?: number };
 
+type ImageDimensions = { width: number; height: number };
+
 /**
  * Dimensions réelles des images optimisées, lues dans les manifestes de
  * `npm run images:optimize`. Elles alimentent les attributs `width`/`height`
  * (pas de saut de mise en page — bon pour le référencement et l'affichage).
+ *
+ * Deux index : par chemin public exact, puis par nom de fichier. Le second
+ * sert de repli quand l'image est référencée depuis un autre dossier que celui
+ * du manifeste (fiches d'œuvres, couvertures, partage…), le nom de fichier
+ * étant unique au sein d'une famille d'images.
  */
-const IMAGE_SIZES: Map<string, { width: number; height: number }> = (() => {
-  const map = new Map<string, { width: number; height: number }>();
+const IMAGE_SIZES: {
+  byPath: Map<string, ImageDimensions>;
+  byName: Map<string, ImageDimensions>;
+} = (() => {
+  const byPath = new Map<string, ImageDimensions>();
+  const byName = new Map<string, ImageDimensions>();
 
   for (const name of ['images-manifest.json', 'expositions-manifest.json']) {
     const file = path.join(process.cwd(), 'src', 'data', name);
@@ -333,23 +339,28 @@ const IMAGE_SIZES: Map<string, { width: number; height: number }> = (() => {
     try {
       const entries = JSON.parse(readFileSync(file, 'utf8')) as ManifestEntry[];
       for (const entry of entries) {
-        if (entry?.file && entry.width && entry.height) {
-          map.set(entry.file, { width: entry.width, height: entry.height });
-        }
+        if (!entry?.file || !entry.width || !entry.height) continue;
+        const size = { width: entry.width, height: entry.height };
+        byPath.set(entry.file, size);
+        const basename = entry.file.split('/').pop();
+        if (basename) byName.set(basename, size);
       }
     } catch {
       /* manifeste illisible : on retombe sur un ratio par défaut */
     }
   }
 
-  return map;
+  return { byPath, byName };
 })();
 
 /** Dimensions d'une image (repli : ratio 4/3, jamais bloquant). */
-export function imageSize(src: string | null | undefined): { width: number; height: number } {
+export function imageSize(src: string | null | undefined): ImageDimensions {
   if (src) {
-    const found = IMAGE_SIZES.get(src);
-    if (found) return found;
+    const exact = IMAGE_SIZES.byPath.get(src);
+    if (exact) return exact;
+    const basename = src.split('/').pop();
+    const byName = basename ? IMAGE_SIZES.byName.get(basename) : undefined;
+    if (byName) return byName;
   }
   return { width: 1200, height: 900 };
 }
@@ -424,60 +435,54 @@ export async function getSettings(locale: Locale = 'fr'): Promise<Settings> {
   };
 }
 
+/**
+ * Les six collections d'œuvres du CMS — une par thème (cf. keystatic.config.ts).
+ * Le thème d'une œuvre est porté par son dossier, plus par un champ.
+ */
+const WORK_COLLECTIONS: { key: `works-${ThemeValue}`; theme: ThemeValue }[] = THEMES.map(
+  (theme) => ({ key: `works-${theme.value}` as const, theme: theme.value })
+);
+
 /** Toutes les œuvres, de la plus récente à la plus ancienne. */
 export async function getWorks(locale: Locale = 'fr'): Promise<Work[]> {
-  const entries = await reader.collections.works.all();
   const sortLocale = locale === 'en' ? 'en' : 'fr';
 
-  /* Œuvres d'un thème masqué : retirées du site en même temps que lui. */
+  /* Thème masqué : ses œuvres sont retirées du site en même temps que lui. */
   const hiddenThemes = new Set(
     (await reader.collections.themes.all())
       .filter(({ entry }) => entry.visible === false)
       .map(({ slug }) => slug)
   );
 
-  return entries
-    .map(({ slug, entry }) => ({
-      slug,
-      title: pick(locale, entry.title, entry.titleEn) ?? slug,
-      /* Relation `themes` (slug) ou ancienne valeur textuelle du sélecteur. */
-      theme: String(entry.theme ?? '') as Work['theme'],
-      image: filled(entry.image) ?? '',
-      gallery: (entry.gallery ?? []).filter((img): img is string => Boolean(img)),
-      year: filled(entry.year),
-      dimensions: filled(entry.dimensions),
-      technique: filled(entry.technique),
-      description: pick(locale, entry.description, entry.descriptionEn),
-      featured: Boolean(entry.featured),
-      /* Absent du YAML (avant la case « Afficher ») = visible. */
-      visible: entry.visible !== false,
-    }))
-    .filter((work) => work.visible && !hiddenThemes.has(work.theme))
+  const byTheme = await Promise.all(
+    WORK_COLLECTIONS.filter(({ theme }) => !hiddenThemes.has(theme)).map(async ({ key, theme }) =>
+      (await reader.collections[key].all()).map(({ slug, entry }) => ({
+        slug,
+        title: pick(locale, entry.title, entry.titleEn) ?? slug,
+        theme: theme as string,
+        image: filled(entry.image) ?? '',
+        gallery: (entry.gallery ?? []).filter((img): img is string => Boolean(img)),
+        year: filled(entry.year),
+        dimensions: filled(entry.dimensions),
+        technique: filled(entry.technique),
+        description: pick(locale, entry.description, entry.descriptionEn),
+        featured: Boolean(entry.featured),
+        isThemeCover: Boolean(entry.isThemeCover),
+        /* Absent du YAML (avant la case « Afficher ») = visible. */
+        visible: entry.visible !== false,
+      }))
+    )
+  );
+
+  return byTheme
+    .flat()
+    .filter((work) => work.visible)
     .sort((a, b) => {
       const yearA = Number(a.year ?? 0);
       const yearB = Number(b.year ?? 0);
       if (yearB !== yearA) return yearB - yearA;
       return a.title.localeCompare(b.title, sortLocale);
     });
-}
-
-export async function getWork(slug: string, locale: Locale = 'fr'): Promise<Work | null> {
-  const works = await getWorks(locale);
-  return works.find((work) => work.slug === slug) ?? null;
-}
-
-/** Œuvres voisines (précédente / suivante) dans l'ordre d'affichage. */
-export async function getWorkNeighbours(
-  slug: string,
-  locale: Locale = 'fr'
-): Promise<{ prev: Work | null; next: Work | null }> {
-  const works = await getWorks(locale);
-  const index = works.findIndex((work) => work.slug === slug);
-  if (index === -1) return { prev: null, next: null };
-  return {
-    prev: index > 0 ? works[index - 1] : null,
-    next: index < works.length - 1 ? works[index + 1] : null,
-  };
 }
 
 export async function getHomepage(locale: Locale = 'fr'): Promise<Homepage> {

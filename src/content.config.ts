@@ -11,7 +11,7 @@ import { glob } from 'astro/loaders';
  * Chaque fichier `.yaml` correspond à une œuvre ou à une page unique.
  */
 export const collections = {
-  works: defineCollection({ loader: glob({ pattern: '*.yaml', base: './src/content/works' }) }),
+  works: defineCollection({ loader: glob({ pattern: '**/*.yaml', base: './src/content/works' }) }),
   expositions: defineCollection({
     loader: glob({ pattern: '*.yaml', base: './src/content/expositions' }),
   }),
