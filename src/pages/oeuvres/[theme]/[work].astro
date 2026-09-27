@@ -243,17 +243,17 @@ const structuredData = graph([
     <div
       data-zoom
       hidden
-      class="fixed inset-0 z-[60] flex-col bg-ink/95 backdrop-blur-sm"
+      class="fixed inset-0 z-[60] flex-col bg-canvas/95 backdrop-blur-md"
       role="dialog"
       aria-modal="true"
       aria-label={t.explorer.zoomAria(work.title)}
     >
       <div class="flex items-center justify-between gap-4 px-4 py-4 sm:px-8">
-        <p class="font-display truncate text-lg text-canvas">{work.title}</p>
+        <p class="font-display truncate text-lg text-ink">{work.title}</p>
         <button
           type="button"
           data-zoom-close
-          class="shrink-0 rounded-full border border-canvas/30 px-3 py-1.5 text-[0.6rem] uppercase tracking-[0.2em] text-canvas transition-colors hover:border-canvas"
+          class="shrink-0 rounded-full border border-ink/25 px-3 py-1.5 text-[0.6rem] uppercase tracking-[0.2em] text-ink transition-colors hover:border-ink"
           aria-label={t.explorer.closeAria}
         >
           {t.explorer.close}

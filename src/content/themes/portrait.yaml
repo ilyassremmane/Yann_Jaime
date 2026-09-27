@@ -1,8 +1,12 @@
-title: "Portrait"
-titleEn: "Portrait"
-tagline: "Figures et visages, présence et retrait."
-taglineEn: "Figures and faces, presence and withdrawal."
+title: Portrait
+titleEn: Portrait
+tagline: Figures et visages, présence et retrait.
+taglineEn: Figures and faces, presence and withdrawal.
 coverWork: em-portrait
-intro: "Portraits et figures : des présences peintes avec économie, où le visage affleure sans jamais se livrer tout à fait."
-introEn: "Portraits and figures: presences painted with economy, where the face surfaces without ever fully giving itself away."
+intro: >-
+  Portraits et figures : des présences peintes avec économie, où le visage
+  affleure sans jamais se livrer tout à fait.
+introEn: >-
+  Portraits and figures: presences painted with economy, where the face surfaces
+  without ever fully giving itself away.
 visible: true
