@@ -110,7 +110,10 @@ KEYSTATIC_STORAGE=github npm run build
 L’interface `/keystatic` permet alors de publier depuis un navigateur : chaque enregistrement
 crée un commit, avec relecture possible avant publication. Les images téléversées arrivent
 dans `public/images/works/<thème>/<slug-de-l'œuvre>/` (le thème est fixé par la collection,
-le dossier par le slug de l'œuvre).
+le dossier par le slug de l'œuvre). Le fichier garde le nom de ce qui a été téléversé — ce qui
+compte, c’est le dossier ; les fiches issues de `npm run images:optimize` utilisent, elles,
+`<slug>.webp`. Une image sans vignette dans `thumbs/` est affichée directement (repli géré par
+`thumbFor`), et sans entrée dans le manifeste, son ratio est supposé 4/3 (`imageSize`).
 
 > En production, le stockage `local` n’est pas disponible (il nécessite le serveur de
 > développement) : le mode GitHub prend le relais.
