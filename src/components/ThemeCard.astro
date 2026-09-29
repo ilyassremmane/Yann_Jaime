@@ -1,6 +1,6 @@
 ---
 import type { Theme } from '../lib/content';
-import { thumbFor } from '../lib/content';
+import { themeAlt, thumbFor } from '../lib/content';
 import { type Locale, ui, withLocale } from '../lib/i18n';
 
 interface Props {
@@ -27,7 +27,7 @@ const t = ui[locale];
           cover ? (
             <img
               src={thumbFor(cover)}
-              alt={`${theme.title}`}
+              alt={themeAlt(theme)}
               data-fade
               width="1200"
               height="900"

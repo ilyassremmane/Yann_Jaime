@@ -1,11 +1,9 @@
 import { config, fields, collection, singleton } from '@keystatic/core';
 
 /**
- * Thèmes (catégories) des œuvres.
- * Les entrées sont gérées dans la collection `themes` (Keystatic → « Thèmes ») :
- * titre, phrase d'accroche, image de couverture. Cette constante garde
- * les valeurs historiques pour valider/migrer les anciens contenus.
- * Ordre = ordre d'affichage sur la page /oeuvres.
+ * Thèmes historiques, dans leur ordre d'affichage d'origine.
+ * La collection « Thèmes » du CMS les remplace au fur et à mesure : cette liste
+ * sert de repli et de clé de migration pour les contenus antérieurs.
  */
 export const THEMES = [
   { value: 'arch-fenetres-tours-nuages', label: 'Architectures · Fenêtres · Tours Nuages', labelEn: 'Architectures · Windows · Cloud Towers' },
@@ -39,29 +37,21 @@ const DOCS_DIR = 'public/documents/about';
 const DOCS_URL = '/documents/about';
 
 /**
- * Mode de stockage du contenu :
- *  - `local` : écriture directe dans le dépôt, sans authentification GitHub —
- *    utilisé automatiquement pendant le développement (`npm run dev`).
- *  - `github` : édition en ligne depuis /keystatic, commits automatiques —
- *    utilisé dans tous les builds de production (Netlify, `npm run build`).
+ * Stockage du contenu : écriture directe dans les fichiers en développement,
+ * commits GitHub (dépôt ci-dessous) dans les builds de production.
  *
- * `import.meta.env.DEV` est remplacé statiquement par Vite : `true` sur le
- * serveur de dev, `false` au build — aucune variable d'environnement nécessaire.
- *
- * ⚠️ On utilise `import.meta.env` et non `process.env` : ce fichier est également
- * chargé dans le navigateur par l'interface d'administration, où `process` n'existe pas.
- */
-/**
- * Dépôt GitHub utilisé en mode GitHub (édition en ligne depuis /keystatic).
+ * `import.meta.env.DEV` est remplacé statiquement par Vite — `true` sur le serveur
+ * de développement, `false` au build. On évite `process.env` : ce fichier est aussi
+ * chargé dans le navigateur par l'administration, où `process` n'existe pas.
  */
 const GITHUB_REPO = 'ilyassremmane/Yann_Jaime';
 
 /**
  * Schéma commun aux six collections d'œuvres (une par thème).
  *
- * Le dossier d'images est propre au thème : l'admin Keystatic ajoute le slug de
- * l'entrée, ce qui donne `public/images/works/<thème>/<œuvre>/<fichier>`.
- * La couverture du thème est choisie depuis l'œuvre (`isThemeCover`) : une
+ * Le dossier d'images est propre au thème : l'administration Keystatic y ajoute
+ * le nom de l'œuvre, soit `public/images/works/<thème>/<œuvre>/<fichier>`.
+ * La couverture d'un thème est désignée depuis une œuvre (`isThemeCover`) : une
  * relation unique ne peut pas viser six collections à la fois.
  */
 function worksSchema(theme: ThemeValue) {
@@ -71,32 +61,34 @@ function worksSchema(theme: ThemeValue) {
   return {
     title: fields.slug({
       name: {
-        label: 'Titre',
-        description: 'Titre affiché de l’œuvre, dans sa langue d’origine.',
+        label: 'Titre de l’œuvre',
+        description:
+          'Tel qu’il s’affiche sur le site, ex. « Paradise en cours ». Ce titre nomme aussi la fiche dans son dossier (accents et espaces convertis automatiquement).',
         validation: { isRequired: true },
       },
     }),
     titleEn: fields.text({
-      label: 'Titre (anglais)',
-      description: 'Version anglaise du titre. Vide = on affiche le titre français.',
+      label: 'Titre en anglais (facultatif)',
+      description: 'Laissez vide pour afficher le titre français sur la version anglaise du site.',
     }),
     image: fields.image({
-      label: 'Image principale',
-      description: 'Visuel de référence de l’œuvre.',
+      label: 'Photo principale',
+      description:
+        'L’image de l’œuvre, affichée dans les listes et sur sa fiche. Déposez le fichier le plus net dont vous disposez : il est optimisé automatiquement.',
       directory,
       publicPath,
       validation: { isRequired: true },
     }),
     gallery: fields.array(
       fields.image({
-        label: 'Image',
+        label: 'Photo',
         directory,
         publicPath,
       }),
       {
-        label: 'Images secondaires',
-        description: 'Détails, vues d’accrochage, étapes de travail…',
-        itemLabel: (props) => props.value?.filename ?? 'Image secondaire',
+        label: 'Autres vues (facultatif)',
+        description: 'Détails, vues de l’atelier, étapes de travail… Elles apparaissent sous la photo principale.',
+        itemLabel: (props) => props.value?.filename ?? 'Photo',
       }
     ),
     year: fields.text({
@@ -112,34 +104,34 @@ function worksSchema(theme: ThemeValue) {
       description: 'Ex. Huile sur canevas',
     }),
     description: fields.text({
-      label: 'Description',
-      description: 'Une ligne vide crée un nouveau paragraphe.',
+      label: 'Texte de présentation (facultatif)',
+      description: 'Une ligne vide sépare deux paragraphes.',
       multiline: true,
     }),
     descriptionEn: fields.text({
-      label: 'Description (anglais)',
-      description: 'Version anglaise. Vide = on affiche la description française.',
+      label: 'Texte de présentation en anglais (facultatif)',
+      description: 'Laissez vide pour reprendre le texte français.',
       multiline: true,
     }),
     featured: fields.checkbox({
       label: 'Mettre en avant',
-      description: 'Proposer l’œuvre dans la sélection éditoriale.',
+      description: 'Propose cette œuvre dans la sélection de la page d’accueil.',
       defaultValue: false,
     }),
     isThemeCover: fields.checkbox({
-      label: 'Couverture du thème',
+      label: 'Afficher en couverture de son thème',
       description:
-        'Affiche cette œuvre en couverture de la carte du thème sur /oeuvres (une seule œuvre par thème).',
+        'Une seule œuvre par thème : elle illustre la carte du thème sur la page « Œuvres » si aucune image de couverture n’y est déposée.',
       defaultValue: false,
     }),
     order: fields.number({
-      label: 'Ordre d’affichage',
+      label: 'Position dans le thème (facultatif)',
       description:
-        'Numéro de position dans la page du thème (1 = première œuvre). Laisser vide : l’œuvre arrive après celles numérotées, classée par année puis par titre.',
+        '1 = première œuvre du thème. Sans numéro, l’œuvre se place après les œuvres numérotées, de la plus récente à la plus ancienne.',
     }),
     visible: fields.checkbox({
       label: 'Afficher cette œuvre sur le site',
-      description: 'Décocher retire l’œuvre du site public (listes, pages détail, sélection d’accueil).',
+      description: 'Décochez pour retirer l’œuvre des pages publiques sans la supprimer.',
       defaultValue: true,
     }),
   };
@@ -153,7 +145,7 @@ export default config({
   ui: {
     brand: { name: 'Yann Jaime — Portfolio' },
     navigation: {
-      Portfolio: [
+      'Œuvres': [
         'themes',
         'works-arch-fenetres-tours-nuages',
         'works-bath',
@@ -163,13 +155,13 @@ export default config({
         'works-portrait',
         'expositions',
       ],
-      'Pages uniques': ['homepage', 'about', 'settings'],
+      'Pages fixes': ['homepage', 'about', 'settings', 'seo'],
     },
   },
 
   collections: {
     /* ---------------------------------------------------------------- */
-    /* THÈMES (navigation façon carolinewalker.org)                     */
+    /* THÈMES                                                           */
     /* ---------------------------------------------------------------- */
     themes: collection({
       label: 'Thèmes',
@@ -181,48 +173,52 @@ export default config({
       schema: {
         title: fields.slug({
           name: {
-            label: 'Titre',
-            description: 'Titre du thème affiché sur /oeuvres (ex. Gravure).',
+            label: 'Nom du thème',
+            description:
+              'Affiché sur la page « Œuvres », ex. « Natures mortes ». Ce nom sert aussi à ranger les fiches : accents et espaces convertis automatiquement.',
             validation: { isRequired: true },
           },
         }),
         titleEn: fields.text({
-          label: 'Titre (anglais)',
-          description: 'Version anglaise du titre. Vide = on affiche le titre français.',
+          label: 'Nom du thème en anglais (facultatif)',
+          description: 'Laissez vide pour afficher le nom français sur la version anglaise du site.',
         }),
         tagline: fields.text({
-          label: "Phrase d'accroche",
-          description: 'Texte court affiché sous le titre du thème.',
+          label: 'Phrase d’accroche (facultatif)',
+          description: 'Petit texte affiché sous le nom du thème.',
           multiline: true,
         }),
         taglineEn: fields.text({
-          label: "Phrase d'accroche (anglais)",
+          label: 'Phrase d’accroche en anglais (facultatif)',
           multiline: true,
         }),
         cover: fields.image({
-          label: 'Image de couverture',
+          label: 'Image de couverture (facultatif)',
           description:
-            "Visuel de la carte du thème sur /oeuvres. Sinon, c'est l'œuvre cochée « Couverture du thème » qui l'illustre.",
+            'Illustre la carte du thème sur la page « Œuvres ». Laissez vide pour utiliser l’œuvre cochée « Afficher en couverture de son thème ». Format paysage conseillé.',
           directory: THEME_COVERS_DIR,
           publicPath: `${THEME_COVERS_URL}/`,
         }),
         intro: fields.text({
-          label: 'Texte de présentation',
-          description: 'Paragraphe affiché en haut de la page du thème (/oeuvres/…).',
+          label: 'Texte de présentation (facultatif)',
+          description:
+            'Paragraphe affiché en haut de la page du thème. Une ligne vide sépare deux paragraphes.',
           multiline: true,
         }),
         introEn: fields.text({
-          label: 'Texte de présentation (anglais)',
+          label: 'Texte de présentation en anglais (facultatif)',
+          description: 'Laissez vide pour reprendre le texte français.',
           multiline: true,
         }),
         order: fields.number({
-          label: 'Ordre d’affichage',
+          label: 'Position sur la page « Œuvres » (facultatif)',
           description:
-            'Numéro de position de la carte sur /oeuvres (1 = première). Laisser vide : le thème prend place après les thèmes numérotés, dans l’ordre historique.',
+            '1 = première carte. Sans numéro, le thème se place après les thèmes numérotés.',
         }),
         visible: fields.checkbox({
           label: 'Afficher ce thème sur le site',
-          description: 'Décocher retire le thème ET toutes ses œuvres du site public (les URLs existantes affichent une 404).',
+          description:
+            'Décochez pour masquer le thème et toutes ses œuvres ; leurs adresses renvoient alors une page « introuvable ».',
           defaultValue: true,
         }),
       },
@@ -231,9 +227,8 @@ export default config({
     /* ---------------------------------------------------------------- */
     /* ŒUVRES                                                           */
     /* ---------------------------------------------------------------- */
-    /* Une collection par thème : l'admin Keystatic range les images d'une
-       entrée dans le dossier <slug> de sa collection — chaque thème possède
-       donc son propre dossier public/images/works/<thème>/<œuvre>/. */
+    /* Une collection par thème : Keystatic range les images d'une fiche dans le
+       dossier de son thème, soit public/images/works/<thème>/<œuvre>/. */
     'works-arch-fenetres-tours-nuages': collection({
       label: 'Œuvres — Architectures',
       slugField: 'title',
@@ -291,9 +286,9 @@ export default config({
 
     /* ---------------------------------------------------------------- */
     /* EXPOSITIONS                                                      */
-    /* Photos d'accrochage et vues d'exposition — rattachées à un lieu  */
-    /* et à des dates, jamais mélangées aux œuvres.                     */
     /* ---------------------------------------------------------------- */
+    /* Vues d'accrochage, rattachées à un lieu et à des dates — jamais
+       mélangées aux œuvres. */
     expositions: collection({
       label: 'Expositions',
       slugField: 'title',
@@ -310,15 +305,15 @@ export default config({
           },
         }),
         titleEn: fields.text({
-          label: 'Titre de l’exposition (anglais)',
-          description: 'Vide = on affiche le titre français.',
+          label: 'Titre en anglais (facultatif)',
+          description: 'Laissez vide pour afficher le titre français.',
         }),
         type: fields.select({
-          label: 'Type',
+          label: 'Type de présentation',
           options: [
             { label: 'Exposition personnelle', value: 'personnelle' },
             { label: 'Exposition collective', value: 'collective' },
-            { label: 'Salon, concours, prix', value: 'concours' },
+            { label: 'Salon, concours ou prix', value: 'concours' },
             { label: 'Vues d’accrochage', value: 'accrochage' },
           ],
           defaultValue: 'collective',
@@ -332,10 +327,14 @@ export default config({
           label: 'Dates',
           description: 'Ex. juin — septembre 2023',
         }),
-        year: fields.text({ label: 'Année', description: 'Ex. 2023' }),
+        year: fields.text({
+          label: 'Année',
+          description: 'Sert à classer les expositions, de la plus récente à la plus ancienne.',
+        }),
         cover: fields.image({
           label: 'Photo de couverture',
-          description: 'Visuel utilisé sur la page Expositions.',
+          description:
+            'Image affichée sur la page « Expositions ». Format paysage conseillé.',
           directory: EXPO_DIR,
           publicPath: `${EXPO_URL}/`,
           validation: { isRequired: true },
@@ -347,24 +346,24 @@ export default config({
             publicPath: `${EXPO_URL}/`,
           }),
           {
-            label: 'Photos de l’exposition',
+            label: 'Autres photos (facultatif)',
             description: 'Vues d’accrochage, affiche, vernissage…',
             itemLabel: (props) => props.value?.filename ?? 'Photo',
           }
         ),
         description: fields.text({
-          label: 'Présentation',
-          description: 'Une ligne vide crée un nouveau paragraphe.',
+          label: 'Texte de présentation (facultatif)',
+          description: 'Une ligne vide sépare deux paragraphes.',
           multiline: true,
         }),
         descriptionEn: fields.text({
-          label: 'Présentation (anglais)',
-          description: 'Vide = on affiche la présentation française.',
+          label: 'Texte de présentation en anglais (facultatif)',
+          description: 'Laissez vide pour reprendre le texte français.',
           multiline: true,
         }),
         link: fields.url({
-          label: 'Lien externe',
-          description: 'Article de presse, page de la galerie (facultatif).',
+          label: 'Lien externe (facultatif)',
+          description: 'Article de presse ou page de la galerie, adresse complète commençant par https://',
         }),
       },
     }),
@@ -380,49 +379,55 @@ export default config({
       format: { data: 'yaml' },
       schema: {
         heroTitle: fields.text({
-          label: 'Titre du hero',
+          label: 'Titre affiché sur la grande image d’accueil',
+          description: 'Ex. « Yann Jaime ».',
           validation: { isRequired: true },
         }),
         heroTitleEn: fields.text({
-          label: 'Titre du hero (anglais)',
-          description: 'Vide = on affiche le titre français.',
+          label: 'Titre en anglais (facultatif)',
+          description: 'Laissez vide pour afficher le titre français.',
         }),
-        heroSubtitle: fields.text({ label: 'Sous-titre du hero' }),
-        heroSubtitleEn: fields.text({ label: 'Sous-titre du hero (anglais)' }),
+        heroSubtitle: fields.text({
+          label: 'Petite ligne au-dessus du titre (facultatif)',
+          description: 'Ex. « Peinture ».',
+        }),
+        heroSubtitleEn: fields.text({
+          label: 'Petite ligne au-dessus du titre, en anglais (facultatif)',
+        }),
         heroMediaType: fields.select({
-          label: 'Type de média principal',
+          label: 'Média affiché en haut de la page',
           options: [
-            { label: 'Photographie', value: 'image' },
-            { label: 'Vidéo', value: 'video' },
+            { label: 'Une suite de photos (carrousel)', value: 'image' },
+            { label: 'Une vidéo', value: 'video' },
           ],
           defaultValue: 'image',
         }),
         heroImage: fields.image({
-          label: 'Photo principale (repli)',
+          label: 'Image de secours (facultatif)',
           description:
-            'Image de secours utilisée seulement si le carrousel ci-dessous est vide. En usage normal, le haut de page affiche le carrousel.',
+            'Utilisée seulement si le carrousel ci-dessous est vide : le haut de la page affiche normalement les œuvres du carrousel.',
           directory: HOME_DIR,
           publicPath: `${HOME_URL}/`,
         }),
         heroSlides: fields.array(
           fields.object({
             theme: fields.select({
-              label: 'Thème',
-              description: 'Dossier / collection où se trouve la fiche de l’œuvre.',
+              label: 'Thème de l’œuvre',
+              description: 'Le dossier où se trouve la fiche (les thèmes sont listés dans « Thèmes »).',
               options: THEMES.map((theme) => ({ label: theme.label, value: theme.value })),
               defaultValue: THEMES[0].value,
             }),
             slug: fields.text({
-              label: 'Slug de l’œuvre',
+              label: 'Nom court de la fiche',
               description:
-                'Nom exact du fichier .yaml de l’œuvre, sans extension (ex. paradise-en-cours).',
+                'Nom exact du fichier de la fiche, sans extension (ex. paradise-en-cours). Vous le trouvez en bas de la fiche de l’œuvre, dans Keystatic.',
               validation: { isRequired: true },
             }),
           }),
           {
-            label: 'Carrousel d’accueil (5 photos)',
+            label: 'Œuvres du carrousel d’accueil',
             description:
-              '5 œuvres affichées en grand dans le carrousel du haut de page, dans l’ordre souhaité. Choisir le thème, puis saisir le slug exact de la fiche.',
+              'Jusqu’à 5 œuvres, dans l’ordre d’apparition. Choisissez le thème, puis saisissez le nom court de la fiche.',
             itemLabel: (props) =>
               [props.fields.theme.value, props.fields.slug.value].filter(Boolean).join(' / ') ||
               'Œuvre',
@@ -430,43 +435,50 @@ export default config({
           }
         ),
         heroVideoUrl: fields.text({
-          label: 'Vidéo principale (URL ou fichier)',
+          label: 'Vidéo affichée en haut de la page (facultatif)',
           description:
-            'Utilisée si « Vidéo » est sélectionnée ci-dessus : fichier déposé dans public/videos/… ou URL complète.',
+            'Utilisée si vous choisissez « Une vidéo » ci-dessus : collez une adresse YouTube ou Vimeo, ou le chemin d’un fichier vidéo.',
         }),
         heroCaption: fields.text({
-          label: 'Légende du média',
+          label: 'Légende de l’image (facultatif)',
           description: 'Ex. « Paradise », série Tours Nuages — Nanterre, 2024.',
         }),
-        heroCaptionEn: fields.text({ label: 'Légende du média (anglais)' }),
-        introTitle: fields.text({ label: 'Titre d’introduction' }),
-        introTitleEn: fields.text({ label: 'Titre d’introduction (anglais)' }),
+        heroCaptionEn: fields.text({
+          label: 'Légende de l’image en anglais (facultatif)',
+        }),
+        introTitle: fields.text({
+          label: 'Titre du texte d’introduction (facultatif)',
+        }),
+        introTitleEn: fields.text({
+          label: 'Titre du texte d’introduction en anglais (facultatif)',
+        }),
         introText: fields.text({
-          label: 'Texte d’introduction',
+          label: 'Texte d’introduction (facultatif)',
+          description: 'Une ligne vide sépare deux paragraphes.',
           multiline: true,
         }),
         introTextEn: fields.text({
-          label: 'Texte d’introduction (anglais)',
-          description: 'Vide = on affiche le texte français.',
+          label: 'Texte d’introduction en anglais (facultatif)',
+          description: 'Laissez vide pour reprendre le texte français.',
           multiline: true,
         }),
-        selection: fields.array(fields.text({ label: 'Slug de l’œuvre' }), {
-          label: 'Sélection d’œuvres (bas de page)',
+        selection: fields.array(fields.text({ label: 'Nom court de la fiche' }), {
+          label: 'Sélection d’œuvres en bas de page',
           description:
-            'Œuvres montrées en entier plus bas sur l’accueil, dans l’ordre souhaité (6 ou plus possibles). Saisir le slug exact de la fiche (nom du fichier .yaml sans extension), par exemple : paradise-en-cours, rebirth-01, pause-final, hard-work, teatime, chess-player. Le thème est retrouvé automatiquement : deux œuvres de thèmes différents peuvent partager le même slug.',
+            'Œuvres montrées en entier sous l’introduction, dans l’ordre souhaité. Saisissez le nom court de chaque fiche (ex. paradise-en-cours, teatime) : le thème est retrouvé automatiquement.',
           itemLabel: (props) => props.value ?? 'Œuvre',
         }),
         worksLinkLabel: fields.text({
-          label: 'Libellé du lien vers /oeuvres',
+          label: 'Texte du lien vers la page « Œuvres »',
           defaultValue: 'Voir toutes les œuvres',
         }),
         worksLinkLabelEn: fields.text({
-          label: 'Libellé du lien vers /oeuvres (anglais)',
+          label: 'Texte du lien vers la page « Œuvres », en anglais',
           defaultValue: 'View all works',
         }),
       },
     }),
-/* ---------------------------------------------------------------- */
+    /* ---------------------------------------------------------------- */
     /* À PROPOS                                                         */
     /* ---------------------------------------------------------------- */
     about: singleton({
@@ -476,69 +488,74 @@ export default config({
       schema: {
         title: fields.text({
           label: 'Titre de la page',
+          description: 'Affiché en haut de la page et comme titre dans Google.',
           defaultValue: 'À propos',
           validation: { isRequired: true },
         }),
         titleEn: fields.text({
-          label: 'Titre de la page (anglais)',
+          label: 'Titre de la page en anglais (facultatif)',
           defaultValue: 'About',
         }),
         portrait: fields.image({
-          label: 'Image de l’artiste',
+          label: 'Photo de l’artiste (facultatif)',
+          description: 'Format portrait conseillé.',
           directory: ABOUT_DIR,
           publicPath: `${ABOUT_URL}/`,
         }),
-        portraitCaption: fields.text({ label: 'Légende de l’image' }),
+        portraitCaption: fields.text({
+          label: 'Légende de la photo (facultatif)',
+        }),
         bioVideoMp4: fields.file({
-          label: 'Vidéo — MP4 (H.264)',
+          label: 'Vidéo — fichier MP4 (H.264)',
           description:
-            'Vidéo silencieuse lue en boucle sur la page À propos. Fichier compressé fourni (960 px, sans son).',
+            'Film lu en boucle sur la page À propos. Format accepté par tous les navigateurs : préférez un fichier léger (sans son, 960 px de large).',
           directory: ABOUT_VIDEOS_DIR,
           publicPath: `${ABOUT_VIDEOS_URL}/`,
         }),
         bioVideoWebm: fields.file({
-          label: 'Vidéo — WebM (VP9)',
-          description: 'Version WebM, lue en priorité par les navigateurs qui la supportent.',
+          label: 'Vidéo — fichier WebM (VP9) (facultatif)',
+          description: 'Même film dans une version plus légère, proposée d’abord aux navigateurs qui l’acceptent.',
           directory: ABOUT_VIDEOS_DIR,
           publicPath: `${ABOUT_VIDEOS_URL}/`,
         }),
         bioVideoPoster: fields.image({
-          label: 'Vidéo — image de prévisualisation',
-          description: 'Image affichée avant le démarrage de la vidéo.',
+          label: 'Vidéo — image d’attente (facultatif)',
+          description: 'Image affichée avant le lancement de la vidéo.',
           directory: ABOUT_DIR,
           publicPath: `${ABOUT_URL}/`,
         }),
         bioVideoCaption: fields.text({
-          label: 'Vidéo — légende',
+          label: 'Vidéo — légende (facultatif)',
           description: 'Courte légende affichée sous la vidéo.',
         }),
         bio: fields.text({
           label: 'Biographie',
-          description: 'Une ligne vide crée un nouveau paragraphe.',
+          description: 'Une ligne vide sépare deux paragraphes.',
           multiline: true,
           validation: { isRequired: true },
         }),
         bioEn: fields.text({
-          label: 'Biographie (anglais)',
-          description: 'Vide = on affiche la biographie française.',
+          label: 'Biographie en anglais (facultatif)',
+          description: 'Laissez vide pour reprendre la biographie française.',
           multiline: true,
         }),
-        quote: fields.text({ label: 'Citation / phrase-clé' }),
-        quoteEn: fields.text({ label: 'Citation / phrase-clé (anglais)' }),
+        quote: fields.text({ label: 'Citation ou phrase-clé (facultatif)' }),
+        quoteEn: fields.text({ label: 'Citation ou phrase-clé en anglais (facultatif)' }),
         cvTitle: fields.text({
-          label: 'Titre de la section CV',
+          label: 'Titre de la partie parcours',
           defaultValue: 'Repères',
         }),
         cvTitleEn: fields.text({
-          label: 'Titre de la section CV (anglais)',
+          label: 'Titre de la partie parcours en anglais',
           defaultValue: 'Milestones',
         }),
         exhibitions: fields.array(fields.text({ label: 'Exposition' }), {
           label: 'Expositions',
+          description: 'Une ligne par exposition, de la plus récente à la plus ancienne.',
           itemLabel: (props) => props.value ?? 'Exposition',
         }),
         awards: fields.array(fields.text({ label: 'Prix' }), {
-          label: 'Prix',
+          label: 'Prix et distinctions',
           itemLabel: (props) => props.value ?? 'Prix',
         }),
         training: fields.array(fields.text({ label: 'Formation' }), {
@@ -550,25 +567,25 @@ export default config({
           itemLabel: (props) => props.value ?? 'Expérience',
         }),
         portfolioPdf: fields.file({
-          label: 'Portfolio (PDF)',
+          label: 'Portfolio en PDF (facultatif)',
           description:
-            'Dossier d’œuvres en PDF — affiche le bouton « Télécharger le portfolio » avant le bloc contact de la page À propos.',
+            'Ajoute un bouton « Télécharger le portfolio » au bas de la page À propos.',
           directory: DOCS_DIR,
           publicPath: `${DOCS_URL}/`,
         }),
         cvPdf: fields.file({
-          label: 'CV (PDF)',
-          description:
-            'CV de l’artiste en PDF — affiche le bouton « Télécharger le CV » avant le bloc contact de la page À propos.',
+          label: 'CV en PDF (facultatif)',
+          description: 'Ajoute un bouton « Télécharger le CV » au bas de la page À propos.',
           directory: DOCS_DIR,
           publicPath: `${DOCS_URL}/`,
         }),
         contactIntro: fields.text({
-          label: 'Texte de contact (bas de page)',
+          label: 'Texte de contact, bas de page (facultatif)',
+          description: 'Une ligne vide sépare deux paragraphes.',
           multiline: true,
         }),
         contactIntroEn: fields.text({
-          label: 'Texte de contact (bas de page) — anglais',
+          label: 'Texte de contact en anglais (facultatif)',
           multiline: true,
         }),
       },
@@ -584,38 +601,27 @@ export default config({
       schema: {
         siteName: fields.text({
           label: 'Nom du site',
+          description: 'Affiché dans le menu, le pied de page et les résultats de recherche.',
           defaultValue: 'Yann Jaime',
           validation: { isRequired: true },
         }),
         tagline: fields.text({
-          label: 'Accroche (français)',
-          description: 'Titre de métier affiché dans l’en-tête, le pied de page et le SEO.',
+          label: 'Métier ou accroche (français)',
+          description: 'Affiché sous le nom, ex. « Peintre ».',
           defaultValue: 'Peintre',
         }),
         taglineEn: fields.text({
-          label: 'Accroche (anglais)',
+          label: 'Métier ou accroche (anglais)',
           defaultValue: 'Painter',
         }),
-        metaDescription: fields.text({
-          label: 'Description SEO (français)',
-          multiline: true,
-        }),
-        metaDescriptionEn: fields.text({
-          label: 'Description SEO (anglais)',
-          multiline: true,
-        }),
-        shareImage: fields.image({
-          label: 'Image de partage (réseaux sociaux)',
-          directory: SHARE_DIR,
-          publicPath: `${SHARE_URL}/`,
-        }),
         email: fields.text({
-          label: 'E-mail',
+          label: 'Adresse e-mail',
+          description: 'Utilisée par le lien de contact et par les moteurs de recherche.',
           validation: { isRequired: true },
         }),
-        phone: fields.text({ label: 'Téléphone' }),
+        phone: fields.text({ label: 'Téléphone (facultatif)' }),
         location: fields.text({
-          label: 'Lieu',
+          label: 'Lieu (facultatif)',
           description: 'Ex. Paris — Lausanne',
         }),
         socials: fields.array(
@@ -631,21 +637,61 @@ export default config({
           }),
           {
             label: 'Réseaux sociaux',
-            description: 'Affichés en pied de page, sur la page Contact et dans les données structurées.',
+            description: 'Ces liens apparaissent au bas de toutes les pages.',
             itemLabel: (props) => props.fields.label.value ?? 'Réseau',
           }
         ),
         footerNote: fields.text({
-          label: 'Mention de pied de page (français)',
+          label: 'Mention de bas de page (français)',
           defaultValue: 'Toutes les œuvres sont protégées par le droit d’auteur.',
         }),
         footerNoteEn: fields.text({
-          label: 'Mention de pied de page (anglais)',
+          label: 'Mention de bas de page (anglais)',
           defaultValue: 'All works are protected by copyright.',
         }),
         copyright: fields.text({
-          label: 'Copyright',
+          label: 'Ligne de copyright',
           defaultValue: '© Yann Jaime',
+        }),
+      },
+    }),
+
+    /* ---------------------------------------------------------------- */
+    /* RÉFÉRENCEMENT (SEO)                                              */
+    /* ---------------------------------------------------------------- */
+    seo: singleton({
+      label: 'Paramètres SEO',
+      path: 'src/content/seo/index',
+      format: { data: 'yaml' },
+      schema: {
+        siteTitle: fields.text({
+          label: 'Titre du site dans Google',
+          description:
+            'Titre affiché dans l’onglet du navigateur et en tête des résultats de recherche. Ex. « Yann Jaime — Peintre ».',
+          defaultValue: 'Yann Jaime — Peintre',
+          validation: { isRequired: true },
+        }),
+        siteTitleEn: fields.text({
+          label: 'Titre du site dans Google, en anglais (facultatif)',
+          description: 'Laissez vide pour reprendre le titre français.',
+        }),
+        metaDescription: fields.text({
+          label: 'Description pour Google',
+          description:
+            'Deux phrases qui présentent votre travail (160 caractères environ). Google les affiche sous le titre.',
+          multiline: true,
+        }),
+        metaDescriptionEn: fields.text({
+          label: 'Description pour Google en anglais (facultatif)',
+          description: 'Laissez vide pour reprendre la description française.',
+          multiline: true,
+        }),
+        ogImage: fields.image({
+          label: 'Image de partage',
+          description:
+            'Image affichée lorsqu’une page du site est partagée sur les réseaux sociaux ou dans une messagerie. Format paysage conseillé (1200 × 630 px).',
+          directory: SHARE_DIR,
+          publicPath: `${SHARE_URL}/`,
         }),
       },
     }),

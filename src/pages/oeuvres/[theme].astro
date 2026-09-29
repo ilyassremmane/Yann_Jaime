@@ -1,7 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import WorkCard from '../../components/WorkCard.astro';
-import type { Work } from '../../lib/content';
 import {
   getSettings,
   getTheme,
@@ -10,6 +9,7 @@ import {
   getWorksByTheme,
   paragraphs,
   themeCover,
+  workAlt,
 } from '../../lib/content';
 import { SITE_URL, artist, breadcrumbs, graph, imageCollectionPage, website } from '../../lib/seo';
 import { type Locale, ui, withLocale } from '../../lib/i18n';
@@ -45,8 +45,6 @@ if (!theme) throw new Error(`Thème introuvable : ${themeSlug}`);
 const cover = await themeCover(theme, works);
 const intro = paragraphs(theme.intro);
 
-const themeWorksFull: Work[] = themeWorks;
-
 const site = SITE_URL;
 const worksPath = withLocale('/oeuvres', locale);
 const themePath = withLocale(`/oeuvres/${theme.slug}`, locale);
@@ -54,7 +52,7 @@ const pageUrl = new URL(themePath, site).toString();
 const seoDescription =
   intro.length > 0
     ? intro.join(' ').slice(0, 180)
-    : t.worksPage.description(themeWorksFull.length);
+    : t.worksPage.description(themeWorks.length);
 const structuredData = graph([
   artist(settings, site),
   website(settings, site, locale),
@@ -65,7 +63,7 @@ const structuredData = graph([
     description: seoDescription,
     id: locale === 'en' ? `/en/oeuvres/${theme.slug}/#collection` : `/oeuvres/${theme.slug}/#collection`,
     locale,
-    items: themeWorksFull.map((work: Work) => ({
+    items: themeWorks.map((work) => ({
       url: withLocale(`/oeuvres/${theme.slug}/${work.slug}`, locale),
       name: work.title,
       image: work.image || undefined,
@@ -83,7 +81,7 @@ const structuredData = graph([
   locale={locale}
   title={`${theme.title} — ${t.worksPage.title}`}
   description={seoDescription}
-  image={cover ?? undefined}
+  ogImage={cover ?? undefined}
   structuredData={structuredData}
 >
   <section class="mx-auto max-w-gallery px-4 py-12 sm:px-8 sm:py-16">
@@ -105,14 +103,14 @@ const structuredData = graph([
         )
       }
       <p class="mt-3 text-xs uppercase tracking-[0.2em] text-clay">
-        {t.worksPage.themeCount(themeWorksFull.length)}
+        {t.worksPage.themeCount(themeWorks.length)}
       </p>
     </header>
 
     {
-      themeWorksFull.length > 0 ? (
+      themeWorks.length > 0 ? (
         <div class="masonry-grid">
-          {themeWorksFull.map((work: Work, index: number) => (
+          {themeWorks.map((work, index) => (
             <div class="masonry-item">
               <WorkCard work={work} priority={index < 6} index={index} locale={locale} />
             </div>
@@ -124,9 +122,8 @@ const structuredData = graph([
     }
   </section>
 
-  <!-- ══ Visionneuse d’œuvre : clic sur une carte → fenêtre avec image + toutes les infos ══ -->
   {
-    themeWorksFull.length > 0 && (
+    themeWorks.length > 0 && (
       <>
         <div
           data-work-modal
@@ -169,7 +166,7 @@ const structuredData = graph([
           </div>
 
           <div data-modal-scroll class="flex flex-1 flex-col overflow-y-auto px-4 pb-6 sm:px-8">
-            {themeWorksFull.map((work: Work) => {
+            {themeWorks.map((work) => {
               const desc = paragraphs(work.description);
               return (
                 <div data-work-panel={work.slug} hidden class="mx-auto my-auto max-w-5xl py-6">
@@ -185,7 +182,7 @@ const structuredData = graph([
                           >
                             <img
                               src={work.image}
-                              alt={`${work.title}${work.year ? `, ${work.year}` : ''}`}
+                              alt={workAlt(work)}
                               class="max-h-[62vh] w-auto max-w-full object-contain"
                               loading="lazy"
                               decoding="async"
@@ -256,7 +253,6 @@ const structuredData = graph([
           </div>
         </div>
 
-        <!-- Zoom plein écran de la photo (clic sur l’image / Échap) -->
         <div
           data-zoom
           hidden
@@ -284,161 +280,163 @@ const structuredData = graph([
     )
   }
 
-    <script>
-      /* Visionneuse d’œuvre : modale au clic sur une carte, navigation ←/→,
-         zoom plein écran au clic sur la photo. Se ré-initialise à chaque
-         navigation douce (ClientRouter → astro:page-load). */
-      type ViewerApi = { onKey: (event: KeyboardEvent) => void };
-      let api: ViewerApi | null = null;
+  <script>
+    /*
+     * Visionneuse d'œuvre : modale ouverte au clic sur une carte, navigation ←/→
+     * et zoom plein écran sur la photo. Le script rejoue à chaque navigation douce
+     * (ClientRouter → astro:page-load), d'où les gardes d'initialisation.
+     */
+    type ViewerApi = { onKey: (event: KeyboardEvent) => void };
+    let api: ViewerApi | null = null;
 
-      const init = () => {
-        const modal = document.querySelector<HTMLElement>('[data-work-modal]');
-        if (!modal) {
-          api = null;
-          document.documentElement.style.overflow = '';
-          return;
-        }
-        if (modal.dataset.ready === '1') return;
-        modal.dataset.ready = '1';
+    const init = () => {
+      const modal = document.querySelector<HTMLElement>('[data-work-modal]');
+      if (!modal) {
+        api = null;
+        document.documentElement.style.overflow = '';
+        return;
+      }
+      if (modal.dataset.ready === '1') return;
+      modal.dataset.ready = '1';
 
-        const zoom = document.querySelector<HTMLElement>('[data-zoom]');
-        const zoomImg = zoom?.querySelector<HTMLImageElement>('[data-zoom-img]');
-        const zoomTitle = zoom?.querySelector<HTMLElement>('[data-zoom-title]');
-        const scroll = modal.querySelector<HTMLElement>('[data-modal-scroll]');
-        const prevBtn = modal.querySelector<HTMLButtonElement>('[data-modal-prev]');
-        const nextBtn = modal.querySelector<HTMLButtonElement>('[data-modal-next]');
-        const closeBtn = modal.querySelector<HTMLButtonElement>('[data-modal-close]');
-        const cards = Array.from(document.querySelectorAll<HTMLAnchorElement>('a[data-work-card]'));
-        const panels = Array.from(modal.querySelectorAll<HTMLElement>('[data-work-panel]'));
-        const slugs = panels.map((panel) => panel.dataset.workPanel ?? '');
-        let opener: HTMLElement | null = null;
+      const zoom = document.querySelector<HTMLElement>('[data-zoom]');
+      const zoomImg = zoom?.querySelector<HTMLImageElement>('[data-zoom-img]');
+      const zoomTitle = zoom?.querySelector<HTMLElement>('[data-zoom-title]');
+      const scroll = modal.querySelector<HTMLElement>('[data-modal-scroll]');
+      const prevBtn = modal.querySelector<HTMLButtonElement>('[data-modal-prev]');
+      const nextBtn = modal.querySelector<HTMLButtonElement>('[data-modal-next]');
+      const closeBtn = modal.querySelector<HTMLButtonElement>('[data-modal-close]');
+      const cards = Array.from(document.querySelectorAll<HTMLAnchorElement>('a[data-work-card]'));
+      const panels = Array.from(modal.querySelectorAll<HTMLElement>('[data-work-panel]'));
+      const slugs = panels.map((panel) => panel.dataset.workPanel ?? '');
+      let opener: HTMLElement | null = null;
 
-        const isOpen = () => modal.classList.contains('flex');
-        const isZoomOpen = () => !!zoom && zoom.classList.contains('flex');
+      const isOpen = () => modal.classList.contains('flex');
+      const isZoomOpen = () => !!zoom && zoom.classList.contains('flex');
 
-        const show = (slug: string) => {
-          panels.forEach((panel) => {
-            panel.hidden = panel.dataset.workPanel !== slug;
-          });
-          modal.dataset.current = slug;
-          const index = slugs.indexOf(slug);
-          if (prevBtn) prevBtn.disabled = index <= 0;
-          if (nextBtn) nextBtn.disabled = index >= slugs.length - 1;
-          scroll?.scrollTo({ top: 0 });
-        };
-
-        const closeZoom = () => {
-          if (!isZoomOpen() || !zoom || !zoomImg) return;
-          zoom.classList.add('hidden');
-          zoom.classList.remove('flex');
-          zoomImg.src = '';
-          panels
-            .find((panel) => !panel.hidden)
-            ?.querySelector<HTMLButtonElement>('[data-zoom-open]')
-            ?.focus();
-        };
-
-        const open = (slug: string, trigger: HTMLElement) => {
-          opener = trigger;
-          show(slug);
-          modal.classList.remove('hidden');
-          modal.classList.add('flex');
-          document.documentElement.style.overflow = 'hidden';
-          closeBtn?.focus();
-        };
-
-        const close = () => {
-          if (!isOpen()) return;
-          closeZoom();
-          modal.classList.add('hidden');
-          modal.classList.remove('flex');
-          document.documentElement.style.overflow = '';
-          opener?.focus();
-          opener = null;
-        };
-
-        const openZoom = (panel: HTMLElement) => {
-          const image = panel
-            .querySelector<HTMLButtonElement>('[data-zoom-open]')
-            ?.querySelector('img');
-          if (!image || !zoom || !zoomImg) return;
-          zoomImg.src = image.currentSrc || image.src;
-          zoomImg.alt = image.alt;
-          if (zoomTitle) zoomTitle.textContent = image.alt;
-          zoom.classList.remove('hidden');
-          zoom.classList.add('flex');
-          zoom.querySelector<HTMLButtonElement>('[data-zoom-close]')?.focus();
-        };
-
-        // Clic sur une carte de la grille → ouvre la visionneuse (sans naviguer).
-        cards.forEach((card) => {
-          card.addEventListener('click', (event) => {
-            if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) {
-              return; // nouvel onglet (Ctrl/Clic) → on laisse le lien normal
-            }
-            const slug = card.dataset.workCard;
-            if (!slug) return;
-            event.preventDefault();
-            open(slug, card);
-          });
-        });
-
-        prevBtn?.addEventListener('click', () => {
-          const index = slugs.indexOf(modal.dataset.current ?? '');
-          if (index > 0) show(slugs[index - 1]);
-        });
-        nextBtn?.addEventListener('click', () => {
-          const index = slugs.indexOf(modal.dataset.current ?? '');
-          if (index >= 0 && index < slugs.length - 1) show(slugs[index + 1]);
-        });
-        closeBtn?.addEventListener('click', close);
-
-        // Clic dans le vide (bandeau ou marges) → ferme.
-        modal.addEventListener('click', (event) => {
-          if (event.target === modal || event.target === scroll) close();
-        });
-
+      const show = (slug: string) => {
         panels.forEach((panel) => {
-          panel
-            .querySelector<HTMLButtonElement>('[data-zoom-open]')
-            ?.addEventListener('click', () => openZoom(panel));
+          panel.hidden = panel.dataset.workPanel !== slug;
         });
-        zoom?.querySelector<HTMLButtonElement>('[data-zoom-close]')?.addEventListener('click', closeZoom);
-        zoom?.addEventListener('click', (event) => {
-          if (event.target === zoom || event.target === zoomImg) closeZoom();
-        });
-
-        api = {
-          onKey: (event) => {
-            if (!isOpen()) return;
-            if (event.key === 'Escape') {
-              event.preventDefault();
-              if (isZoomOpen()) closeZoom();
-              else close();
-              return;
-            }
-            if (isZoomOpen()) return;
-            if (event.altKey || event.ctrlKey || event.metaKey) return;
-            const target = event.target;
-            if (
-              target instanceof HTMLElement &&
-              target.closest('input, textarea, select, [contenteditable="true"]')
-            ) {
-              return;
-            }
-            if (event.key === 'ArrowLeft') {
-              event.preventDefault();
-              prevBtn?.click();
-            } else if (event.key === 'ArrowRight') {
-              event.preventDefault();
-              nextBtn?.click();
-            }
-          },
-        };
+        modal.dataset.current = slug;
+        const index = slugs.indexOf(slug);
+        if (prevBtn) prevBtn.disabled = index <= 0;
+        if (nextBtn) nextBtn.disabled = index >= slugs.length - 1;
+        scroll?.scrollTo({ top: 0 });
       };
 
-      window.addEventListener('keydown', (event) => api?.onKey(event));
-      document.addEventListener('astro:page-load', init);
-      init();
-    </script>
+      const closeZoom = () => {
+        if (!isZoomOpen() || !zoom || !zoomImg) return;
+        zoom.classList.add('hidden');
+        zoom.classList.remove('flex');
+        zoomImg.src = '';
+        panels
+          .find((panel) => !panel.hidden)
+          ?.querySelector<HTMLButtonElement>('[data-zoom-open]')
+          ?.focus();
+      };
+
+      const open = (slug: string, trigger: HTMLElement) => {
+        opener = trigger;
+        show(slug);
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.documentElement.style.overflow = 'hidden';
+        closeBtn?.focus();
+      };
+
+      const close = () => {
+        if (!isOpen()) return;
+        closeZoom();
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.documentElement.style.overflow = '';
+        opener?.focus();
+        opener = null;
+      };
+
+      const openZoom = (panel: HTMLElement) => {
+        const image = panel
+          .querySelector<HTMLButtonElement>('[data-zoom-open]')
+          ?.querySelector('img');
+        if (!image || !zoom || !zoomImg) return;
+        zoomImg.src = image.currentSrc || image.src;
+        zoomImg.alt = image.alt;
+        if (zoomTitle) zoomTitle.textContent = image.alt;
+        zoom.classList.remove('hidden');
+        zoom.classList.add('flex');
+        zoom.querySelector<HTMLButtonElement>('[data-zoom-close]')?.focus();
+      };
+
+      // Clic sur une carte de la grille → ouvre la visionneuse (sans naviguer).
+      cards.forEach((card) => {
+        card.addEventListener('click', (event) => {
+          if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) {
+            return; // nouvel onglet (Ctrl/Clic) → on laisse le lien normal
+          }
+          const slug = card.dataset.workCard;
+          if (!slug) return;
+          event.preventDefault();
+          open(slug, card);
+        });
+      });
+
+      prevBtn?.addEventListener('click', () => {
+        const index = slugs.indexOf(modal.dataset.current ?? '');
+        if (index > 0) show(slugs[index - 1]);
+      });
+      nextBtn?.addEventListener('click', () => {
+        const index = slugs.indexOf(modal.dataset.current ?? '');
+        if (index >= 0 && index < slugs.length - 1) show(slugs[index + 1]);
+      });
+      closeBtn?.addEventListener('click', close);
+
+      // Clic dans le vide (bandeau ou marges) → ferme.
+      modal.addEventListener('click', (event) => {
+        if (event.target === modal || event.target === scroll) close();
+      });
+
+      panels.forEach((panel) => {
+        panel
+          .querySelector<HTMLButtonElement>('[data-zoom-open]')
+          ?.addEventListener('click', () => openZoom(panel));
+      });
+      zoom?.querySelector<HTMLButtonElement>('[data-zoom-close]')?.addEventListener('click', closeZoom);
+      zoom?.addEventListener('click', (event) => {
+        if (event.target === zoom || event.target === zoomImg) closeZoom();
+      });
+
+      api = {
+        onKey: (event) => {
+          if (!isOpen()) return;
+          if (event.key === 'Escape') {
+            event.preventDefault();
+            if (isZoomOpen()) closeZoom();
+            else close();
+            return;
+          }
+          if (isZoomOpen()) return;
+          if (event.altKey || event.ctrlKey || event.metaKey) return;
+          const target = event.target;
+          if (
+            target instanceof HTMLElement &&
+            target.closest('input, textarea, select, [contenteditable="true"]')
+          ) {
+            return;
+          }
+          if (event.key === 'ArrowLeft') {
+            event.preventDefault();
+            prevBtn?.click();
+          } else if (event.key === 'ArrowRight') {
+            event.preventDefault();
+            nextBtn?.click();
+          }
+        },
+      };
+    };
+
+    window.addEventListener('keydown', (event) => api?.onKey(event));
+    document.addEventListener('astro:page-load', init);
+    init();
+  </script>
 </BaseLayout>

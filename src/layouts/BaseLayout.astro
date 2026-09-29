@@ -4,16 +4,19 @@ import '../styles/motion.css';
 import { ClientRouter } from 'astro:transitions';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
-import { getSettings } from '../lib/content';
+import { getSettings, imageSize } from '../lib/content';
 import { type Locale, ui, withLocale } from '../lib/i18n';
 
 interface Props {
   /** Langue de la page : `fr` (racine `/`) ou `en` (`/en/…`). */
   locale?: Locale;
+  /** Titre de la page, sans le nom du site (ajouté automatiquement). */
   title?: string;
+  /** Description reprise par Google et par les réseaux sociaux. */
   description?: string;
-  image?: string;
-  imageAlt?: string;
+  /** Image de partage : photo de l'œuvre, du thème ou de l'exposition. */
+  ogImage?: string;
+  ogImageAlt?: string;
   canonical?: string;
   type?: 'website' | 'article';
   noindex?: boolean;
@@ -30,8 +33,8 @@ const settings = await getSettings(locale);
 const {
   title,
   description = settings.metaDescription,
-  image = settings.shareImage ?? undefined,
-  imageAlt,
+  ogImage = settings.shareImage ?? undefined,
+  ogImageAlt,
   canonical = Astro.url.pathname,
   type = 'website',
   noindex = false,
@@ -40,21 +43,20 @@ const {
 } = Astro.props;
 
 const SITE = (Astro.site?.toString() ?? 'https://www.yannjaime.com/').replace(/\/$/, '');
-const pageTitle = title ? `${title} — ${settings.siteName}` : `${settings.siteName} — ${settings.tagline}`;
+const pageTitle = title ? `${title} — ${settings.siteName}` : settings.seoTitle;
 const fullUrl = new URL(canonical, SITE).toString();
+
 /*
- * Alternates FR/EN (hreflang) : les mêmes URL servies dans les deux langues.
- * On normalise depuis la page courante — robuste même si `canonical` n'a pas
- * encore le préfixe `/en`.
+ * Versions FR/EN de la page (hreflang) : on repart du chemin sans le préfixe
+ * `/en`, ce qui reste juste même si `canonical` n'est pas encore préfixé.
  */
 const basePath = canonical.replace(/^\/en(?=\/|$)/, '') || '/';
 const frUrl = new URL(withLocale(basePath, 'fr'), SITE).toString();
 const enUrl = new URL(withLocale(basePath, 'en'), SITE).toString();
-const fullImage = image ? new URL(image, SITE).toString() : undefined;
-const alt = imageAlt ?? description;
-// Dimensions réelles de l'image de partage (manifeste) pour og:image:width/height.
-const { imageSize } = await import('../lib/content');
-const shareSize = image ? imageSize(image) : null;
+const fullImage = ogImage ? new URL(ogImage, SITE).toString() : undefined;
+const alt = ogImageAlt ?? description;
+/* Dimensions réelles de l'image de partage, lues dans le manifeste d'images. */
+const shareSize = ogImage ? imageSize(ogImage) : null;
 ---
 
 <!doctype html>
@@ -64,23 +66,21 @@ const shareSize = image ? imageSize(image) : null;
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>{pageTitle}</title>
 
-    <!-- SEO de base -->
     <meta name="description" content={description} />
     <meta name="robots" content={noindex ? 'noindex, nofollow' : 'index, follow'} />
+    <meta name="author" content={settings.siteName} />
+    <meta name="theme-color" content="#fbfaf7" />
     <link rel="canonical" href={fullUrl} />
-    <!-- Versions FR / EN de cette page (référencement multilingue) -->
+
+    <!-- Versions FR / EN de la page, et version servie par défaut -->
     <link rel="alternate" hreflang="fr" href={frUrl} />
     <link rel="alternate" hreflang="en" href={enUrl} />
     <link rel="alternate" hreflang="x-default" href={frUrl} />
     <link rel="sitemap" href="/sitemap-index.xml" />
-    <meta name="theme-color" content="#fbfaf7" />
-    <meta name="author" content={settings.siteName} />
 
-    <!-- Favicon & manifeste -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="manifest" href="/site.webmanifest" />
 
-    <!-- Open Graph -->
     <meta property="og:type" content={type} />
     <meta property="og:site_name" content={settings.siteName} />
     <meta property="og:locale" content={locale === 'en' ? 'en_US' : 'fr_FR'} />
@@ -98,14 +98,13 @@ const shareSize = image ? imageSize(image) : null;
       )
     }
 
-    <!-- Twitter Cards -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={pageTitle} />
     <meta name="twitter:description" content={description} />
     {fullImage && <meta name="twitter:image" content={fullImage} />}
     {fullImage && <meta name="twitter:image:alt" content={alt} />}
 
-    <!-- Réseaux de l'artiste (vérification de propriété, rel=me) -->
+    <!-- Réseaux de l'artiste : vérification de propriété (rel=me) -->
     {settings.socials.map((social) => <link rel="me" href={social.url} />)}
 
     <!-- Polices : Cormorant Garamond (titres) + Jost (textes) -->
@@ -116,14 +115,13 @@ const shareSize = image ? imageSize(image) : null;
       rel="stylesheet"
     />
 
-    <!-- Transitions douces entre les pages (aucun rechargement complet) -->
     <ClientRouter />
 
     <!-- Données structurées : artiste, site, fil d'Ariane et page -->
     {structuredData && <script is:inline type="application/ld+json" set:html={structuredData} />}
   </head>
   <body class="flex min-h-screen flex-col">
-    <!-- Fond « grain de toile » : voile de bruit fixe, sous tout le contenu -->
+    <!-- Voile de bruit fixe, sous tout le contenu (fond « grain de toile ») -->
     <div class="grain-overlay" aria-hidden="true"></div>
 
     <a href="#contenu" class="skip-link">{t.skipLink}</a>

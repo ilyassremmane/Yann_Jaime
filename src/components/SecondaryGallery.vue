@@ -11,7 +11,6 @@ const props = defineProps<{
   locale?: Locale;
 }>();
 
-/** Libellés d'interface de la langue courante. */
 const t = computed(() => ui[props.locale ?? 'fr']);
 
 const openIndex = ref<number | null>(null);
@@ -90,46 +89,46 @@ onBeforeUnmount(() => {
           aria-modal="true"
           :aria-label="`${t.explorer.zoom} : ${current.alt}`"
         >
-        <div class="flex items-center justify-between gap-4 px-4 py-4 sm:px-8">
-          <p class="font-display truncate text-lg text-ink">{{ current.alt }}</p>
-          <button
-            ref="closeButton"
-            type="button"
-            class="shrink-0 rounded-full border border-ink/25 px-3 py-1.5 text-[0.6rem] uppercase tracking-[0.2em] text-ink transition-colors hover:border-ink"
-            :aria-label="t.explorer.closeAria"
-            @click="closeViewer()"
-          >
-            {{ t.explorer.close }}
-          </button>
-        </div>
+          <div class="flex items-center justify-between gap-4 px-4 py-4 sm:px-8">
+            <p class="font-display truncate text-lg text-ink">{{ current.alt }}</p>
+            <button
+              ref="closeButton"
+              type="button"
+              class="shrink-0 rounded-full border border-ink/25 px-3 py-1.5 text-[0.6rem] uppercase tracking-[0.2em] text-ink transition-colors hover:border-ink"
+              :aria-label="t.explorer.closeAria"
+              @click="closeViewer()"
+            >
+              {{ t.explorer.close }}
+            </button>
+          </div>
 
-        <div class="flex flex-1 items-center justify-center overflow-hidden px-3 sm:px-8">
-          <img :src="current.src" :alt="current.alt" class="max-h-[74vh] max-w-full object-contain" />
-        </div>
+          <div class="flex flex-1 items-center justify-center overflow-hidden px-3 sm:px-8">
+            <img :src="current.src" :alt="current.alt" class="max-h-[74vh] max-w-full object-contain" />
+          </div>
 
-        <div class="flex items-center justify-between gap-4 px-4 py-4 sm:px-8">
-          <button
-            type="button"
-            class="rounded-full border border-ink/25 px-4 py-2 text-[0.6rem] uppercase tracking-[0.2em] text-ink transition-colors hover:border-ink disabled:opacity-30"
-            :disabled="images.length < 2"
-            :aria-label="t.explorer.previousAria"
-            @click="step(-1)"
-          >
-            {{ t.explorer.previous }}
-          </button>
-          <p class="text-[0.6rem] uppercase tracking-[0.24em] text-ink/50">
-            {{ (openIndex ?? 0) + 1 }} / {{ images.length }}
-          </p>
-          <button
-            type="button"
-            class="rounded-full border border-ink/25 px-4 py-2 text-[0.6rem] uppercase tracking-[0.2em] text-ink transition-colors hover:border-ink disabled:opacity-30"
-            :disabled="images.length < 2"
-            :aria-label="t.explorer.nextAria"
-            @click="step(1)"
-          >
-            {{ t.explorer.next }}
-          </button>
-        </div>
+          <div class="flex items-center justify-between gap-4 px-4 py-4 sm:px-8">
+            <button
+              type="button"
+              class="rounded-full border border-ink/25 px-4 py-2 text-[0.6rem] uppercase tracking-[0.2em] text-ink transition-colors hover:border-ink disabled:opacity-30"
+              :disabled="images.length < 2"
+              :aria-label="t.explorer.previousAria"
+              @click="step(-1)"
+            >
+              {{ t.explorer.previous }}
+            </button>
+            <p class="text-[0.6rem] uppercase tracking-[0.24em] text-ink/50">
+              {{ (openIndex ?? 0) + 1 }} / {{ images.length }}
+            </p>
+            <button
+              type="button"
+              class="rounded-full border border-ink/25 px-4 py-2 text-[0.6rem] uppercase tracking-[0.2em] text-ink transition-colors hover:border-ink disabled:opacity-30"
+              :disabled="images.length < 2"
+              :aria-label="t.explorer.nextAria"
+              @click="step(1)"
+            >
+              {{ t.explorer.next }}
+            </button>
+          </div>
         </div>
       </Transition>
     </Teleport>

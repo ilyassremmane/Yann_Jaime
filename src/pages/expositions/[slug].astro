@@ -71,8 +71,8 @@ const structuredData = graph([
   locale={locale}
   title={exposition.title}
   description={seoDescription}
-  image={exposition.cover}
-  imageAlt={t.expoPage.ogAlt(exposition.title)}
+  ogImage={exposition.cover}
+  ogImageAlt={t.expoPage.ogAlt(exposition.title)}
   type="article"
   structuredData={structuredData}
 >
@@ -84,7 +84,6 @@ const structuredData = graph([
     </nav>
 
     <div class="grid gap-10 lg:grid-cols-12 lg:gap-14">
-      <!-- Visuel principal -->
       <div class="lg:col-span-8">
         <figure class="work-frame overflow-hidden">
           {exposition.cover ? (
@@ -103,7 +102,6 @@ const structuredData = graph([
         </figure>
       </div>
 
-      <!-- Fiche de l'exposition -->
       <div class="lg:col-span-4">
         <div class="lg:sticky lg:top-28">
           <p class="eyebrow">{expositionType(exposition.type, locale)}</p>
@@ -137,7 +135,6 @@ const structuredData = graph([
       </div>
     </div>
 
-    <!-- Galerie -->
     {gallery.length > 0 && (
       <section class="mt-16 border-t border-ink/10 pt-8">
         <h2 class="eyebrow mb-6">{t.expoPage.viewsTitle}</h2>
@@ -145,7 +142,6 @@ const structuredData = graph([
       </section>
     )}
 
-    <!-- Navigation entre expositions -->
     <nav
       class="mt-16 flex items-center justify-between gap-4 border-t border-ink/10 pt-6 text-xs uppercase tracking-[0.2em]"
       aria-label={t.expoPage.navAria}

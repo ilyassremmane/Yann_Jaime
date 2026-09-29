@@ -12,9 +12,6 @@
  */
 export type Locale = 'fr' | 'en';
 
-export const LOCALES: readonly Locale[] = ['fr', 'en'];
-export const DEFAULT_LOCALE: Locale = 'fr';
-
 /** Langue déduite du chemin : `/en/…` → `en`, sinon `fr`. */
 export function localeFromPath(pathname: string): Locale {
   return pathname === '/en' || pathname.startsWith('/en/') ? 'en' : 'fr';
@@ -36,6 +33,12 @@ const fr = {
     contact: 'Contact',
   },
   langSwitch: { label: 'Changer de langue' },
+  header: {
+    navAria: 'Navigation principale',
+    homeAria: (name: string) => `${name} — retour à l’accueil`,
+    menu: 'Menu',
+    close: 'Fermer',
+  },
   skipLink: 'Aller au contenu principal',
   footer: { browse: 'Parcourir', contact: 'Contact', credits: 'Site réalisé par' },
 
@@ -48,6 +51,10 @@ const fr = {
     eyebrow: 'Peinture',
     videoLabel: 'Vidéo',
     workAlt: (title: string) => `Œuvre de ${title}`,
+    discover: 'Découvrir la fiche →',
+    slideGoTo: (n: number) => `Afficher la photo ${n}`,
+    slidePrev: 'Photo précédente',
+    slideNext: 'Photo suivante',
   },
 
   worksPage: {
@@ -182,6 +189,12 @@ const en: typeof fr = {
     contact: 'Contact',
   },
   langSwitch: { label: 'Change language' },
+  header: {
+    navAria: 'Main navigation',
+    homeAria: (name: string) => `${name} — back to home`,
+    menu: 'Menu',
+    close: 'Close',
+  },
   skipLink: 'Skip to main content',
   footer: { browse: 'Browse', contact: 'Contact', credits: 'Website crafted by' },
 
@@ -194,6 +207,10 @@ const en: typeof fr = {
     eyebrow: 'Painting',
     videoLabel: 'Video',
     workAlt: (title: string) => `Work by ${title}`,
+    discover: 'View the work →',
+    slideGoTo: (n: number) => `Show photo ${n}`,
+    slidePrev: 'Previous photo',
+    slideNext: 'Next photo',
   },
 
   worksPage: {

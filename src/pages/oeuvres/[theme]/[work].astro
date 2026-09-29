@@ -1,7 +1,6 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import SecondaryGallery from '../../../components/SecondaryGallery.vue';
-import type { Work } from '../../../lib/content';
 import {
   getSettings,
   getTheme,
@@ -10,6 +9,7 @@ import {
   getWorksByTheme,
   paragraphs,
   themeTitle,
+  workAlt,
   workMeta,
 } from '../../../lib/content';
 import { SITE_URL, artist, artwork, breadcrumbs, graph, website } from '../../../lib/seo';
@@ -19,8 +19,8 @@ export async function getStaticPaths() {
   const [themes, works] = await Promise.all([getThemes(), getWorks()]);
   return themes.flatMap((theme) =>
     works
-      .filter((work: Work) => work.theme === theme.slug)
-      .map((work: Work) => ({
+      .filter((work) => work.theme === theme.slug)
+      .map((work) => ({
         params: { theme: theme.slug, work: work.slug },
         props: { themeSlug: theme.slug, workSlug: work.slug },
       }))
@@ -44,10 +44,10 @@ const [theme, themeWorks, settings] = await Promise.all([
 ]);
 
 if (!theme) throw new Error(`Thème introuvable : ${themeSlug}`);
-const work = themeWorks.find((item: Work) => item.slug === workSlug);
+const work = themeWorks.find((item) => item.slug === workSlug);
 if (!work) throw new Error(`Œuvre introuvable : ${workSlug}`);
 
-const index = themeWorks.findIndex((item: Work) => item.slug === workSlug);
+const index = themeWorks.findIndex((item) => item.slug === workSlug);
 const prev = index > 0 ? themeWorks[index - 1] : null;
 const next = index < themeWorks.length - 1 ? themeWorks[index + 1] : null;
 
@@ -87,13 +87,12 @@ const structuredData = graph([
   locale={locale}
   title={work.title}
   description={seoDescription}
-  image={work.image}
-  imageAlt={`${work.title}${work.year ? `, ${work.year}` : ''}${work.technique ? ` — ${work.technique}` : ''}`}
+  ogImage={work.image}
+  ogImageAlt={`${workAlt(work)}${work.technique ? ` — ${work.technique}` : ''}`}
   type="article"
   structuredData={structuredData}
 >
   <article class="bg-white text-black" data-work-page>
-    <!-- Bloc principal : image + cartel tiens sur un écran (desktop) -->
     <div
       class="mx-auto flex w-full max-w-6xl flex-col px-4 py-6 sm:px-8 lg:min-h-[calc(100svh-5rem)]"
     >
@@ -106,140 +105,137 @@ const structuredData = graph([
       <a href={themePath} class="link-underline hover:text-black">{themeName}</a>
     </nav>
 
-    <div class="grid flex-1 items-center gap-8 py-4 lg:grid-cols-12 lg:gap-14">
-      <!-- Image : à droite en desktop, au-dessus en mobile ; cliquable pour agrandir -->
-      <div class="order-1 lg:order-2 lg:col-span-8">
-        <figure class="work-frame mx-auto max-w-full">
+      <div class="grid flex-1 items-center gap-8 py-4 lg:grid-cols-12 lg:gap-14">
+        <div class="order-1 lg:order-2 lg:col-span-8">
+          <figure class="work-frame mx-auto max-w-full">
+            {
+              work.image ? (
+                <button
+                  type="button"
+                  data-zoom-open
+                  aria-label={t.explorer.zoomAria(work.title)}
+                  class="group flex w-full cursor-zoom-in items-center justify-center focus-visible:outline-offset-4"
+                >
+                  <img
+                    src={work.image}
+                    alt={workAlt(work)}
+                    class="max-h-[58vh] w-auto max-w-full object-contain"
+                    fetchpriority="high"
+                    decoding="async"
+                  />
+                </button>
+              ) : (
+                <div class="flex aspect-[4/3] items-center justify-center bg-neutral-100 text-xs uppercase tracking-[0.2em] text-black/50">
+                  {t.explorer.comingSoon}
+                </div>
+              )
+            }
+            {
+              work.image && (
+                <figcaption class="mt-2 text-center text-[0.65rem] uppercase tracking-[0.2em] text-black/45">
+                  {t.explorer.zoomHint}
+                </figcaption>
+              )
+            }
+          </figure>
+        </div>
+
+        <div class="order-2 text-left lg:order-1 lg:col-span-4">
+          <p class="eyebrow text-black">{themeName}</p>
+          <h1 class="font-display mt-3 text-lg leading-tight text-black sm:text-xl">{work.title}</h1>
+
           {
-            work.image ? (
-              <button
-                type="button"
-                data-zoom-open
-                aria-label={t.explorer.zoomAria(work.title)}
-                class="group flex w-full cursor-zoom-in items-center justify-center focus-visible:outline-offset-4"
-              >
-                <img
-                  src={work.image}
-                  alt={`${work.title}${work.year ? `, ${work.year}` : ''}`}
-                  class="max-h-[58vh] w-auto max-w-full object-contain"
-                  fetchpriority="high"
-                  decoding="async"
-                />
-              </button>
-            ) : (
-              <div class="flex aspect-[4/3] items-center justify-center bg-neutral-100 text-xs uppercase tracking-[0.2em] text-black/50">
-                {t.explorer.comingSoon}
+            meta.length > 0 && (
+              <dl class="mt-5 space-y-1.5 border-t border-black/10 pt-4 text-sm">
+                {work.technique && (
+                  <div class="flex items-baseline gap-3">
+                    <dt class="text-black/50">{t.explorer.techniqueLabel}</dt>
+                    <dd class="text-black">{work.technique}</dd>
+                  </div>
+                )}
+                {work.dimensions && (
+                  <div class="flex items-baseline gap-3">
+                    <dt class="text-black/50">{t.explorer.dimensionsLabel}</dt>
+                    <dd class="text-black">{work.dimensions}</dd>
+                  </div>
+                )}
+                {work.year && (
+                  <div class="flex items-baseline gap-3">
+                    <dt class="text-black/50">{t.explorer.yearLabel}</dt>
+                    <dd class="text-black">{work.year}</dd>
+                  </div>
+                )}
+              </dl>
+            )
+          }
+
+          {
+            description.length > 0 && (
+              <div class="mt-6 space-y-4 text-left text-[0.95rem] leading-relaxed text-black">
+                {description.map((paragraph) => (
+                  <p>{paragraph}</p>
+                ))}
               </div>
             )
           }
-          {
-            work.image && (
-              <figcaption class="mt-2 text-center text-[0.65rem] uppercase tracking-[0.2em] text-black/45">
-                {t.explorer.zoomHint}
-              </figcaption>
-            )
-          }
-        </figure>
+
+          <a
+            href={withLocale('/contact', locale)}
+            class="link-underline mt-8 inline-block text-xs uppercase tracking-[0.2em] text-black"
+          >
+            {t.explorer.requestInfo}
+          </a>
+
+          <p class="mt-6 hidden text-[0.65rem] uppercase tracking-[0.2em] text-black/40 lg:block">
+            {t.explorer.keyboardHint}
+          </p>
+        </div>
       </div>
-
-      <!-- Cartel : à gauche en desktop, sous l'image en mobile -->
-      <div class="order-2 text-left lg:order-1 lg:col-span-4">
-        <p class="eyebrow text-black">{themeName}</p>
-      <h1 class="font-display mt-3 text-lg leading-tight text-black sm:text-xl">{work.title}</h1>
+    </div>
 
       {
-        meta.length > 0 && (
-          <dl class="mt-5 space-y-1.5 border-t border-black/10 pt-4 text-sm">
-            {work.technique && (
-              <div class="flex items-baseline gap-3">
-                <dt class="text-black/50">{t.explorer.techniqueLabel}</dt>
-                <dd class="text-black">{work.technique}</dd>
-              </div>
-            )}
-            {work.dimensions && (
-              <div class="flex items-baseline gap-3">
-                <dt class="text-black/50">{t.explorer.dimensionsLabel}</dt>
-                <dd class="text-black">{work.dimensions}</dd>
-              </div>
-            )}
-            {work.year && (
-              <div class="flex items-baseline gap-3">
-                <dt class="text-black/50">{t.explorer.yearLabel}</dt>
-                <dd class="text-black">{work.year}</dd>
-              </div>
-            )}
-          </dl>
+        gallery.length > 0 && (
+          <section class="mx-auto mt-16 max-w-5xl border-t border-black/10 pt-8">
+            <h2 class="eyebrow mb-6 text-center text-black">{t.explorer.imagesTitle}</h2>
+            <SecondaryGallery client:visible images={gallery} locale={locale} />
+          </section>
         )
       }
 
-      {
-        description.length > 0 && (
-          <div class="mt-6 space-y-4 text-left text-[0.95rem] leading-relaxed text-black">
-            {description.map((paragraph) => (
-              <p>{paragraph}</p>
-            ))}
-          </div>
-        )
-      }
-
-      <a
-        href={withLocale('/contact', locale)}
-        class="link-underline mt-8 inline-block text-xs uppercase tracking-[0.2em] text-black"
+      <nav
+        class="mt-8 flex items-center justify-between gap-4 border-t border-black/10 pt-5 text-xs uppercase tracking-[0.2em]"
+        aria-label={t.explorer.imagesNavAria}
       >
-        {t.explorer.requestInfo}
-      </a>
+        <div class="flex w-full items-center justify-between gap-4 pb-4">
+          {
+            prev ? (
+              <a
+                data-nav-prev
+                href={withLocale(`/oeuvres/${theme.slug}/${prev.slug}`, locale)}
+                class="link-underline max-w-[45%] text-black/60 hover:text-black"
+              >
+                {t.explorer.navPrev}: {prev.title}
+              </a>
+            ) : (
+              <span></span>
+            )
+          }
+          {
+            next ? (
+              <a
+                data-nav-next
+                href={withLocale(`/oeuvres/${theme.slug}/${next.slug}`, locale)}
+                class="link-underline max-w-[45%] text-right text-black/60 hover:text-black"
+              >
+                {next.title} — {t.explorer.navNext}
+              </a>
+            ) : (
+              <span></span>
+            )
+          }
+        </div>
+      </nav>
 
-      <p class="mt-6 hidden text-[0.65rem] uppercase tracking-[0.2em] text-black/40 lg:block">
-        {t.explorer.keyboardHint}
-      </p>
-      </div>
-    </div>
-
-    {
-      gallery.length > 0 && (
-        <section class="mx-auto mt-16 max-w-5xl border-t border-black/10 pt-8">
-          <h2 class="eyebrow mb-6 text-center text-black">{t.explorer.imagesTitle}</h2>
-          <SecondaryGallery client:visible images={gallery} locale={locale} />
-        </section>
-      )
-    }
-
-    <nav
-      class="mt-8 flex items-center justify-between gap-4 border-t border-black/10 pt-5 text-xs uppercase tracking-[0.2em]"
-      aria-label={t.explorer.imagesNavAria}
-    >
-      <div class="flex w-full items-center justify-between gap-4 pb-4">
-        {
-          prev ? (
-            <a
-              data-nav-prev
-              href={withLocale(`/oeuvres/${theme.slug}/${prev.slug}`, locale)}
-              class="link-underline max-w-[45%] text-black/60 hover:text-black"
-            >
-              {t.explorer.navPrev}: {prev.title}
-            </a>
-          ) : (
-            <span></span>
-          )
-        }
-        {
-          next ? (
-            <a
-              data-nav-next
-              href={withLocale(`/oeuvres/${theme.slug}/${next.slug}`, locale)}
-              class="link-underline max-w-[45%] text-right text-black/60 hover:text-black"
-            >
-              {next.title} — {t.explorer.navNext}
-            </a>
-          ) : (
-            <span></span>
-          )
-        }
-      </div>
-    </nav>
-    </div>
-
-    <!-- Visionneuse plein écran (clic sur l'image / Échap) -->
     <div
       data-zoom
       hidden

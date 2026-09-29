@@ -2,9 +2,15 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import WorkCard from '../components/WorkCard.astro';
 import HeroCarousel from '../components/HeroCarousel.vue';
-import { getHomepage, getSettings, getWorks, paragraphs, themeLabel, thumbFor } from '../lib/content';
+import {
+  getHomepage,
+  getSettings,
+  getWorks,
+  imageSize,
+  paragraphs,
+  workAlt,
+} from '../lib/content';
 import { SITE_URL, artist, breadcrumbs, graph, imageCollectionPage, website } from '../lib/seo';
-import { imageSize } from '../lib/content';
 import { type Locale, ui, withLocale } from '../lib/i18n';
 
 interface Props {
@@ -21,14 +27,14 @@ const [homepage, works, settings] = await Promise.all([
   getSettings(locale),
 ]);
 
-/** Œuvres choisies dans Keystatic pour le bas de page (« Sélection d’œuvres ») : 6 ou plus, montrées en entier. */
+/** Œuvres cochées « Sélection d'œuvres » dans Keystatic, montrées en entier. */
 const selected = homepage.selection
   .map((slug) => works.find((work) => work.slug === slug))
   .filter((work): work is NonNullable<typeof work> => Boolean(work));
 
 const highlight = selected.length > 0 ? selected : works.filter((work) => work.featured).slice(0, 6);
 
-/** Carrousel du hero : exactement la liste « Carrousel d’accueil (5 photos) » de Keystatic. */
+/** Carrousel : exactement la liste « Œuvres du carrousel d'accueil » du CMS. */
 const carouselWorks = homepage.heroSlides
   .map((ref) =>
     works.find((work) =>
@@ -37,20 +43,16 @@ const carouselWorks = homepage.heroSlides
   )
   .filter((work): work is NonNullable<typeof work> => Boolean(work))
   .slice(0, 5)
-  .map((w) => ({
-  title: w.title,
-  year: w.year,
-  theme: w.theme,
-  slug: w.slug,
-  image: w.image,
-  thumb: thumbFor(w.image),
-  url: withLocale(`/oeuvres/${w.theme}/${w.slug}`, locale),
-  themeLabel: themeLabel(w.theme, locale),
-}));
+  .map((work) => ({
+    title: work.title,
+    alt: workAlt(work),
+    year: work.year,
+    image: work.image,
+    url: withLocale(`/oeuvres/${work.theme}/${work.slug}`, locale),
+  }));
 
 const introParagraphs = paragraphs(homepage.introText);
 
-/* Média principal : photo ou vidéo (fichier ou plateforme) */
 const videoUrl = homepage.heroVideoUrl ?? '';
 const embedMatch = videoUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{6,})/);
 const vimeoMatch = videoUrl.match(/vimeo\.com\/(\d+)/);
@@ -61,7 +63,7 @@ const embedUrl = embedMatch
     : null;
 const showVideo = homepage.heroMediaType === 'video' && videoUrl.length > 0;
 
-/** Dimensions réelles de l'image du hero (évite tout saut de mise en page). */
+/* Dimensions réelles de l'image de secours (aucun saut de mise en page). */
 const heroSize = homepage.heroImage ? imageSize(homepage.heroImage) : null;
 
 const site = SITE_URL;
@@ -88,10 +90,8 @@ const structuredData = graph([
 ---
 
 <BaseLayout locale={locale} structuredData={structuredData} headerVariant="overlay">
-  <!--
-    Hero plein écran : carrousel de 5 œuvres défilantes en plein format,
-    passant sous l'en-tête transparent.
-  -->
+  <!-- Hero plein écran sous l'en-tête transparent : carrousel d'œuvres,
+       ou, à défaut, la vidéo ou l'image de secours choisies dans Keystatic. -->
   <section class="relative w-full overflow-hidden bg-ink">
     {
       carouselWorks.length > 0 ? (
@@ -100,6 +100,7 @@ const structuredData = graph([
           works={carouselWorks}
           heroTitle={homepage.heroTitle}
           heroSubtitle={homepage.heroSubtitle ?? t.home.eyebrow}
+          locale={locale}
         />
       ) : (
         <div class="hero-full relative w-full">
@@ -160,7 +161,6 @@ const structuredData = graph([
       )
     }
   </section>
-  <!-- Introduction -->
   {
     (homepage.introTitle || introParagraphs.length > 0) && (
       <section class="mx-auto max-w-gallery px-4 py-14 sm:px-8 sm:py-20">
@@ -180,7 +180,6 @@ const structuredData = graph([
     )
   }
 
-  <!-- Sélection d'œuvres (formats d'origine conservés) -->
   {
     highlight.length > 0 && (
       <section class="mx-auto max-w-gallery px-4 pb-16 sm:px-8 sm:pb-24">
@@ -211,7 +210,6 @@ const structuredData = graph([
     )
   }
 
-  <!-- Appel vers la biographie -->
   <section class="mx-auto max-w-gallery px-4 pb-20 sm:px-8 sm:pb-28">
     <div class="flex flex-col gap-4 border-t border-ink/10 pt-8 sm:flex-row sm:items-center sm:justify-between">
       <p class="max-w-measure text-sm leading-relaxed text-clay">{t.home.bioBlurb}</p>

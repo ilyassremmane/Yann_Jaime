@@ -1,23 +1,21 @@
 ---
 import type { Work } from '../lib/content';
-import { themeLabel, thumbFor, workMeta } from '../lib/content';
+import { themeLabel, thumbFor, workAlt, workMeta } from '../lib/content';
 import { type Locale, ui, withLocale } from '../lib/i18n';
 
 interface Props {
   work: Work;
   /** Charge l'image en priorité (hero, premières vignettes visibles). */
   priority?: boolean;
-  size?: 'default' | 'large';
   /** Index dans la grille : décale légèrement l'apparition. */
   index?: number;
   /** Langue de la page (libellés et lien vers la fiche). */
   locale?: Locale;
   /**
    * `true` (défaut) = image encadrée : fond blanc + filet, hauteur naturelle.
-   * `false` (accueil) = sans cadre : chaque photo occupe 100 % de la largeur
-   * de la colonne (les formats non carrés s'affichent en grand), centrée
-   * verticalement dans la rangée ; le bloc titre a une hauteur minimale fixe,
-   * donc les titres s'alignent ligne par ligne.
+   * `false` (accueil) = sans cadre : chaque photo occupe toute la largeur de sa
+   * colonne, centrée verticalement, et le bloc de titre garde une hauteur fixe
+   * pour que les titres s'alignent ligne par ligne.
    */
   frame?: boolean;
 }
@@ -57,7 +55,7 @@ const imgClass = frame
           work.image ? (
             <img
               src={thumbFor(work.image)}
-              alt={`${work.title}${work.year ? `, ${work.year}` : ''}`}
+              alt={workAlt(work)}
               data-fade
               loading={priority ? 'eager' : 'lazy'}
               decoding="async"
@@ -73,7 +71,6 @@ const imgClass = frame
       </div>
     </figure>
 
-    <!-- Hauteur minimale fixe : le premier trait de titre démarre toujours au même endroit -->
     <div class:list={[frame ? 'mt-4' : 'mt-4 min-h-[7.5rem]']}>
       <h3 class="font-display text-lg leading-snug text-ink sm:text-xl">
         {work.title}

@@ -84,7 +84,8 @@ L’artiste gère tout son site sans toucher au code :
 | **Thèmes** | `src/content/themes/*.yaml` | Titre, accroche, image de couverture, texte de présentation, Visibilité |
 | **Accueil** (singleton) | `src/content/homepage/index.yaml` | Titre et sous-titre du hero, **photo ou vidéo** principale, légende, texte d’introduction, sélection d’œuvres, libellé du lien |
 | **À propos** (singleton) | `src/content/about/index.yaml` | Portrait, légende, biographie, citation, CV (expositions, prix, formations, expériences) |
-| **Paramètres globaux** (singleton) | `src/content/settings/index.yaml` | Nom du site, accroche, description SEO, image de partage, e-mail, téléphone, lieu, réseaux sociaux, pied de page |
+| **Paramètres globaux** (singleton) | `src/content/settings/index.yaml` | Nom du site, accroche fr/en, e-mail, téléphone, lieu, réseaux sociaux, mention de bas de page, copyright |
+| **Paramètres SEO** (singleton) | `src/content/seo/index.yaml` | Titre dans Google (fr/en), description d’accroche fr/en, image de partage |
 
 > **Rangement des œuvres** : le thème est donné par le dossier de la fiche
 > (`src/content/works/<thème>/<slug>.yaml`, une collection Keystatic par thème) et les
@@ -141,21 +142,38 @@ téléversé, lui, reste intact dans le dépôt.
 
 ```
 ├── astro.config.mjs          # SSG + adapter Node (pour /keystatic) + integrations
-├── keystatic.config.ts       # schémas du CMS (œuvres + 3 pages uniques)
+├── keystatic.config.ts       # schémas du CMS (œuvres, thèmes, expositions, pages + SEO)
 ├── tailwind.config.mjs
 ├── scripts/
 │   ├── optimize-images.js    # sharp : sources → WebP + vignettes + manifeste
+│   ├── compress-uploads.js   # photos téléversées : conversion, recompression, vignettes
 │   └── seed-content.mjs      # création des fiches d’œuvres depuis le manifeste
 ├── src/
-│   ├── components/           # Header, Footer, WorkCard, WorksExplorer.vue, SecondaryGallery.vue
-│   ├── content/              # contenu éditable (works/, homepage/, about/, settings/)
-│   ├── data/                 # images-manifest.json
+│   ├── components/           # Header, Footer, ThemeCard, WorkCard, HeroCarousel.vue, SecondaryGallery.vue
+│   ├── content/              # contenu éditable (works/, themes/, expositions/, homepage/, about/, settings/, seo/)
+│   ├── data/                 # images-manifest.json, expositions-manifest.json
 │   ├── layouts/BaseLayout.astro
 │   ├── lib/content.ts        # lecture typée du contenu (reader Keystatic)
-│   ├── pages/                # index, oeuvres/, a-propos, contact, 404
+│   ├── lib/seo.ts            # données structurées schema.org (JSON-LD)
+│   ├── lib/i18n.ts           # libellés d’interface FR / EN
+│   ├── pages/                # index, oeuvres/, expositions/, a-propos, contact, 404 (+ /en/)
 │   └── styles/global.css     # palette, fond « grain de toile », typographie
 └── public/images/works/      # images optimisées (works/<thème>/<œuvre>/ + thumbs/…)
 ```
+
+## Référencement
+
+Deux sources, toutes deux éditables dans `/keystatic` :
+
+- **Paramètres SEO** (singleton) : titre affiché dans Google, description d’accroche (fr/en)
+  et image de partage par défaut.
+- **Contenus** : le titre et l’année d’une œuvre, la phrase d’accroche d’un thème, la
+  présentation d’une exposition alimentent les `<title>`, les balises `og:` et les
+  attributs `alt` (accessibilité + images).
+
+`src/layouts/BaseLayout.astro` expose les props `title`, `description`, `ogImage`,
+`ogImageAlt`, `canonical`, `type`, `noindex` et `structuredData` ; chaque page y passe ses
+propres valeurs (fiche d’œuvre, thème, exposition) avec repli sur le singleton SEO.
 
 ## Design
 
@@ -184,8 +202,9 @@ statique (GitHub Pages, S3…), utilisez `npm run build:static`.
 
 ## À personnaliser
 
-- `site` dans `astro.config.mjs` et `SITE` dans `src/layouts/BaseLayout.astro` (URL définitive).
+- `site` dans `astro.config.mjs` et `SITE_URL` dans `src/lib/seo.ts` (URL définitive).
 - `GITHUB_REPO` dans `keystatic.config.ts` (dépôt utilisé par le mode GitHub).
+- Le singleton « Paramètres SEO » (titre dans Google, description, image de partage).
 - Les fiches d’œuvres dont le titre est encore automatique (« Sans titre », « IMG … ») :
   à compléter dans `/keystatic`.
 - Ajouter un portrait de l’artiste dans le singleton « À propos ».

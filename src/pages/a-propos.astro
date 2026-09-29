@@ -27,7 +27,7 @@ const seoDescription = bio.length > 0 ? bio[0].slice(0, 180) : t.aboutPage.seoFa
   locale={locale}
   title={about.title}
   description={seoDescription}
-  image={about.portrait ?? undefined}
+  ogImage={about.portrait ?? undefined}
 >
   <section class="mx-auto max-w-gallery px-4 py-12 sm:px-8 sm:py-16">
     <header class="border-b border-ink/10 pb-6">
@@ -38,7 +38,6 @@ const seoDescription = bio.length > 0 ? bio[0].slice(0, 180) : t.aboutPage.seoFa
     </header>
 
     <div class="mt-10 grid gap-10 lg:grid-cols-12 lg:gap-14">
-      <!-- Portrait -->
       <div class="lg:col-span-5">
         {
           about.portrait && (
@@ -59,7 +58,6 @@ const seoDescription = bio.length > 0 ? bio[0].slice(0, 180) : t.aboutPage.seoFa
         }
       </div>
 
-      <!-- Biographie -->
       <div class="lg:col-span-6 lg:col-start-7">
         {
           about.quote && (
@@ -74,11 +72,9 @@ const seoDescription = bio.length > 0 ? bio[0].slice(0, 180) : t.aboutPage.seoFa
       </div>
     </div>
 
-    <!-- Desktop : sous-sections (expositions + CV) à gauche, vidéo à droite ;
-         mobile : vidéo en premier, centrée et large. -->
+    <!-- Vidéo à droite en desktop, en tête de liste sur mobile -->
     <section class="mt-16 border-t border-ink/10 pt-10">
       <div class="grid gap-10 lg:grid-cols-12 lg:gap-14">
-        <!-- Vidéo : centrée dans son bloc (mx-auto), collante en desktop -->
         <div class="lg:order-2 lg:col-span-5">
           {
             (about.bioVideoMp4 || about.bioVideoWebm) && (
@@ -98,7 +94,6 @@ const seoDescription = bio.length > 0 ? bio[0].slice(0, 180) : t.aboutPage.seoFa
                     {about.bioVideoWebm && <source src={about.bioVideoWebm} type="video/webm" />}
                     {about.bioVideoMp4 && <source src={about.bioVideoMp4} type="video/mp4" />}
                   </video>
-                  <!-- Point/bouton « lire » superposé (masqué dès que la vidéo démarre) -->
                   <button
                     type="button"
                     data-video-play
@@ -127,9 +122,7 @@ const seoDescription = bio.length > 0 ? bio[0].slice(0, 180) : t.aboutPage.seoFa
           }
         </div>
 
-        <!-- Expositions + Prix / Formations / Expériences -->
         <div class="lg:order-1 lg:col-span-7">
-          <!-- Expositions : renvoie à la page dédiée -->
           <div
             class="flex flex-col gap-2 border-b border-ink/10 pb-6 sm:flex-row sm:items-baseline sm:justify-between"
           >
@@ -142,7 +135,6 @@ const seoDescription = bio.length > 0 ? bio[0].slice(0, 180) : t.aboutPage.seoFa
             </a>
           </div>
 
-          <!-- CV -->
           {
             cvSections.length > 0 && (
               <div class="pt-8">
@@ -167,9 +159,8 @@ const seoDescription = bio.length > 0 ? bio[0].slice(0, 180) : t.aboutPage.seoFa
     </section>
 
     <script>
-      // Bouton « lire » superposé à la vidéo d'atelier :
-      // cliquable sur toute la surface de la vidéo, masqué dès qu'elle démarre
-      // (et ré-affiché en cas de pause, pour relancer facilement sur mobile).
+      /* Le bouton « lire » couvre la vidéo : il disparaît pendant la lecture et
+         revient à la pause, pour relancer facilement sur mobile. */
       document.querySelectorAll('[data-video-player]').forEach((player) => {
         const video = player.querySelector('video');
         const button = player.querySelector('[data-video-play]');
@@ -184,7 +175,6 @@ const seoDescription = bio.length > 0 ? bio[0].slice(0, 180) : t.aboutPage.seoFa
       });
     </script>
 
-    <!-- Documents téléchargeables : portfolio & CV (PDF gérés dans Keystatic) -->
     {
       (about.portfolioPdf || about.cvPdf) && (
         <section class="mt-16 border-t border-ink/10 pt-8">
@@ -212,7 +202,6 @@ const seoDescription = bio.length > 0 ? bio[0].slice(0, 180) : t.aboutPage.seoFa
       )
     }
 
-    <!-- Contact (bas de page) -->
     <section class="mt-16 border-t border-ink/10 pt-8">
       <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div class="max-w-measure space-y-3 text-sm leading-relaxed text-clay">

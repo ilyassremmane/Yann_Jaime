@@ -67,7 +67,7 @@ export function website(settings: Settings, site: string, locale: Locale = 'fr')
     '@type': 'WebSite',
     '@id': abs(site, SITE_ID),
     url: abs(site, locale === 'en' ? '/en/' : '/'),
-    name: `${settings.siteName} — ${settings.tagline}`,
+    name: settings.seoTitle,
     inLanguage: locale,
     author: { '@id': abs(site, ARTIST_ID) },
     copyrightHolder: { '@id': abs(site, ARTIST_ID) },

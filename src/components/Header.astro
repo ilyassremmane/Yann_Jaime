@@ -55,94 +55,96 @@ const enPath = withLocale(pathname, 'en');
 >
   <nav
     class="mx-auto flex max-w-gallery items-center justify-between gap-4 px-4 py-2.5 sm:px-8 lg:py-3"
-    aria-label="Navigation principale"
+    aria-label={t.header.navAria}
   >
-    <a href="/" class="flex items-center gap-3 leading-none" aria-label={`${siteName} — retour à l’accueil`}>
+    <a
+      href={withLocale('/', locale)}
+      class="flex items-center gap-3 leading-none"
+      aria-label={t.header.homeAria(siteName)}
+    >
       <!--
-        Logo : le tracé original (PNG détouré) sert de masque et prend la
-        couleur courante de l'en-tête — gris des textes sur fond blanc,
-        blanc posé sur l'image de l'accueil.
+        Logo : le tracé détouré sert de masque et prend la couleur courante de
+        l'en-tête — gris des textes sur fond de toile, blanc posé sur l'image
+        plein écran de l'accueil.
       -->
       <span class="brand-logo h-12 w-auto lg:h-14" role="img" aria-label={siteName}></span>
       <span class="brand-sub eyebrow hidden text-sm xl:block xl:text-base">{tagline}</span>
     </a>
 
     <div class="flex items-center gap-4 md:gap-6">
-    <!-- Navigation desktop -->
-    <!--
-      Tailles échelonnées : md (16px) → lg (18px) → xl (20px). `whitespace-nowrap`
-      hérité interdit le repli d'un libellé (« À propos ») sur deux lignes dans la
-      zone 1024-1199 px, où la place est la plus juste avec le logo agrandi.
-    -->
-    <ul
-      class="hidden items-center gap-5 whitespace-nowrap text-xs uppercase tracking-[0.16em] md:flex lg:gap-6 lg:text-sm lg:tracking-[0.18em] xl:gap-9 xl:text-base xl:tracking-[0.2em]"
-    >
-      {
-        links.map((l) => (
-          <li>
-            <a href={l.href} class="nav-link" aria-current={isActive(l.match) ? 'page' : undefined}>
-              {l.label}
-            </a>
-          </li>
-        ))
-      }
-    </ul>
-
-    <!-- Sélecteur de langue : visible en permanence, en haut à droite -->
-    <div class="lang-switch" role="group" aria-label={t.langSwitch.label}>
-      <a href={frPath} lang="fr" hreflang="fr" aria-current={locale === 'fr' ? 'true' : undefined}>Fr</a>
-      <span aria-hidden="true">/</span>
-      <a href={enPath} lang="en" hreflang="en" aria-current={locale === 'en' ? 'true' : undefined}>En</a>
-    </div>
-
-    <!-- Menu mobile -->
-    <details class="relative md:hidden" data-mobile-menu>
-      <summary
-        class="menu-toggle flex cursor-pointer list-none items-center gap-2.5 rounded-full border px-4 py-2.5 text-[0.82rem] uppercase tracking-[0.22em]"
+      <!--
+        Tailles échelonnées md → lg → xl, avec `whitespace-nowrap` : dans la zone
+        1024-1199 px, « À propos » ne doit pas se replier sur deux lignes.
+      -->
+      <ul
+        class="hidden items-center gap-5 whitespace-nowrap text-xs uppercase tracking-[0.16em] md:flex lg:gap-6 lg:text-sm lg:tracking-[0.18em] xl:gap-9 xl:text-base xl:tracking-[0.2em]"
       >
-        <!--
-          État fermé : trois barres + « Menu ». État ouvert : croix + « Fermer ».
-          La bascule est faite en CSS via `details[open]` (voir motion.css) : aucun
-          JS supplémentaire, et le libellé visible change avec l'état, ce qui donne
-          son nom accessible au bouton (l'état ouvert/fermé est déjà exposé par
-          <details>/<summary>).
-        -->
-        <span class="menu-icon menu-icon--burger flex h-3 w-4 flex-col justify-between" aria-hidden="true">
-          <span class="h-px w-full bg-current"></span>
-          <span class="h-px w-full bg-current"></span>
-          <span class="h-px w-full bg-current"></span>
-        </span>
-        <svg
-          class="menu-icon menu-icon--close"
-          width="15"
-          height="15"
-          viewBox="0 0 15 15"
-          fill="none"
-          aria-hidden="true"
-        >
-          <path d="M2 2 13 13M13 2 2 13" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"
-          ></path>
-        </svg>
-        <span class="menu-label menu-label--burger">Menu</span>
-        <span class="menu-label menu-label--close">Fermer</span>
-      </summary>
+        {
+          links.map((link) => (
+            <li>
+              <a
+                href={link.href}
+                class="nav-link"
+                aria-current={isActive(link.match) ? 'page' : undefined}
+              >
+                {link.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
 
-      <!-- Voile sur la page + panneau centré -->
-      <div class="menu-backdrop" aria-hidden="true"></div>
-      <div class="mobile-panel">
-        <ul>
-          {
-            links.map((l) => (
-              <li>
-                <a href={l.href} aria-current={isActive(l.match) ? 'page' : undefined}>
-                  {l.label}
-                </a>
-              </li>
-            ))
-          }
-        </ul>
+      <div class="lang-switch" role="group" aria-label={t.langSwitch.label}>
+        <a href={frPath} lang="fr" hreflang="fr" aria-current={locale === 'fr' ? 'true' : undefined}>Fr</a>
+        <span aria-hidden="true">/</span>
+        <a href={enPath} lang="en" hreflang="en" aria-current={locale === 'en' ? 'true' : undefined}>En</a>
       </div>
-    </details>
+
+      <details class="relative md:hidden" data-mobile-menu>
+        <summary
+          class="menu-toggle flex cursor-pointer list-none items-center gap-2.5 rounded-full border px-4 py-2.5 text-[0.82rem] uppercase tracking-[0.22em]"
+        >
+          <!--
+            Fermé : trois barres + « Menu ». Ouvert : croix + « Fermer ». La
+            bascule se fait en CSS via `details[open]` (voir motion.css), et le
+            libellé visible donne son nom accessible au bouton — l'état, lui, est
+            déjà exposé par <details>/<summary>.
+          -->
+          <span class="menu-icon menu-icon--burger flex h-3 w-4 flex-col justify-between" aria-hidden="true">
+            <span class="h-px w-full bg-current"></span>
+            <span class="h-px w-full bg-current"></span>
+            <span class="h-px w-full bg-current"></span>
+          </span>
+          <svg
+            class="menu-icon menu-icon--close"
+            width="15"
+            height="15"
+            viewBox="0 0 15 15"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path d="M2 2 13 13M13 2 2 13" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"
+            ></path>
+          </svg>
+          <span class="menu-label menu-label--burger">{t.header.menu}</span>
+          <span class="menu-label menu-label--close">{t.header.close}</span>
+        </summary>
+
+        <div class="menu-backdrop" aria-hidden="true"></div>
+        <div class="mobile-panel">
+          <ul>
+            {
+              links.map((link) => (
+                <li>
+                  <a href={link.href} aria-current={isActive(link.match) ? 'page' : undefined}>
+                    {link.label}
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+      </details>
     </div>
   </nav>
 </header>

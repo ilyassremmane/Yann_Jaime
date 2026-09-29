@@ -19,4 +19,5 @@ export const collections = {
   homepage: defineCollection({ loader: glob({ pattern: '*.yaml', base: './src/content/homepage' }) }),
   about: defineCollection({ loader: glob({ pattern: '*.yaml', base: './src/content/about' }) }),
   settings: defineCollection({ loader: glob({ pattern: '*.yaml', base: './src/content/settings' }) }),
+  seo: defineCollection({ loader: glob({ pattern: '*.yaml', base: './src/content/seo' }) }),
 };

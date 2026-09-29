@@ -168,6 +168,8 @@ export type Work = {
 export type Settings = {
   siteName: string;
   tagline: string;
+  /** Titre affiché dans l'onglet et dans Google (singleton « Paramètres SEO »). */
+  seoTitle: string;
   metaDescription: string;
   shareImage: string | null;
   email: string;
@@ -176,6 +178,13 @@ export type Settings = {
   socials: { label: string; url: string }[];
   footerNote: string | null;
   copyright: string;
+};
+
+/** Référencement global, géré dans le singleton Keystatic « Paramètres SEO ». */
+export type Seo = {
+  siteTitle: string;
+  metaDescription: string;
+  shareImage: string | null;
 };
 
 /** Exposition : lieu + dates + photos d'accrochage (collection séparée des œuvres). */
@@ -193,14 +202,14 @@ export type Exposition = {
   link: string | null;
 };
 
-export const EXPOSITION_TYPES: Record<Exposition['type'], string> = {
+const EXPOSITION_TYPES: Record<Exposition['type'], string> = {
   personnelle: 'Exposition personnelle',
   collective: 'Exposition collective',
   concours: 'Salon, concours, prix',
   accrochage: 'Vues d’accrochage',
 };
 
-export const EXPOSITION_TYPES_EN: Record<Exposition['type'], string> = {
+const EXPOSITION_TYPES_EN: Record<Exposition['type'], string> = {
   personnelle: 'Solo exhibition',
   collective: 'Group exhibition',
   concours: 'Art fair, competition, prize',
@@ -257,20 +266,24 @@ export type About = {
 };
 
 /* ------------------------------------------------------------------ */
-/* Valeurs de repli (si un fichier de contenu est absent)              */
 /* ------------------------------------------------------------------ */
+/* Valeurs de repli si un fichier de contenu est absent                */
+/* ------------------------------------------------------------------ */
+
+/** Mention de bas de page utilisée quand l'artiste laisse le champ vide. */
+const FALLBACK_FOOTER_NOTE = 'Toutes les œuvres sont protégées par le droit d’auteur.';
 
 const FALLBACK_SETTINGS: Settings = {
   siteName: 'Yann Jaime',
   tagline: 'Peintre',
-  metaDescription:
-    'Portfolio de Yann Jaime, peintre suisse-chilien : peintures d’architectures, d’intérieurs et de figures, série Tours Nuages.',
+  seoTitle: 'Yann Jaime — Peintre',
+  metaDescription: '',
   shareImage: null,
   email: 'sepulveda_yann@yahoo.fr',
   phone: null,
   location: 'Paris — Lausanne',
   socials: [],
-  footerNote: 'Toutes les œuvres sont protégées par le droit d’auteur.',
+  footerNote: FALLBACK_FOOTER_NOTE,
   copyright: '© Yann Jaime',
 };
 
@@ -280,6 +293,13 @@ const FALLBACK_EN = {
   metaDescription:
     'Portfolio of Yann Jaime, Swiss-Chilean painter: paintings of architecture, interiors and figures, and the Tours Nuages series.',
   footerNote: 'All works are protected by copyright.',
+};
+
+/** Replis du référencement, si « Paramètres SEO » n'est pas encore rempli. */
+const FALLBACK_SEO = {
+  siteTitle: 'Yann Jaime — Peintre',
+  metaDescription:
+    'Portfolio de Yann Jaime, peintre suisse-chilien : peintures d’architectures, d’intérieurs et de figures, série Tours Nuages.',
 };
 
 /* ------------------------------------------------------------------ */
@@ -347,6 +367,20 @@ export function thumbFor(image: string): string {
   const candidate = `/images/${match[1]}/thumbs/${match[2]}`;
   const onDisk = path.join(process.cwd(), 'public', candidate.replace(/^\//, ''));
   return existsSync(onDisk) ? candidate : image;
+}
+
+/* ------------------------------------------------------------------ */
+/* Textes alternatifs                                                  */
+/* ------------------------------------------------------------------ */
+
+/** Texte alternatif d'une œuvre : son titre et son année (saisis dans Keystatic). */
+export function workAlt(work: Pick<Work, 'title' | 'year'>): string {
+  return work.year ? `${work.title}, ${work.year}` : work.title;
+}
+
+/** Texte alternatif d'une carte de thème : son nom et sa phrase d'accroche. */
+export function themeAlt(theme: Pick<Theme, 'title' | 'tagline'>): string {
+  return theme.tagline ? `${theme.title} — ${theme.tagline}` : theme.title;
 }
 
 /* ------------------------------------------------------------------ */
@@ -429,50 +463,51 @@ export function artworkSize(
   return { width, height };
 }
 
-/** Présentation d'un thème depuis la collection `themes` (null si absente). */
-export async function themeIntro(theme: string, locale: Locale = 'fr'): Promise<string | null> {
-  const found = await getTheme(theme, locale);
-  return found && found.intro && found.intro.length > 0 ? found.intro : null;
-}
-
 /* ------------------------------------------------------------------ */
 /* Lecture des contenus                                                */
 /* ------------------------------------------------------------------ */
 
-export async function getSettings(locale: Locale = 'fr'): Promise<Settings> {
-  const entry = await reader.singletons.settings.read();
-  if (!entry) {
-    return {
-      ...FALLBACK_SETTINGS,
-      tagline: fallbackText(locale, FALLBACK_SETTINGS.tagline, FALLBACK_EN.tagline),
-      metaDescription: fallbackText(
-        locale,
-        FALLBACK_SETTINGS.metaDescription,
-        FALLBACK_EN.metaDescription
-      ),
-      footerNote: locale === 'en' ? FALLBACK_EN.footerNote : FALLBACK_SETTINGS.footerNote,
-    };
-  }
+/**
+ * Référencement global (singleton « Paramètres SEO ») : titre affiché dans Google,
+ * description d'accroche et image de partage, avec repli français/anglais.
+ */
+export async function getSeo(locale: Locale = 'fr'): Promise<Seo> {
+  const entry = await reader.singletons.seo.read().catch(() => null);
 
   return {
-    siteName: filled(entry.siteName) ?? FALLBACK_SETTINGS.siteName,
-    tagline:
-      pick(locale, entry.tagline, entry.taglineEn) ??
-      fallbackText(locale, FALLBACK_SETTINGS.tagline, FALLBACK_EN.tagline),
+    siteTitle: pick(locale, entry?.siteTitle, entry?.siteTitleEn) ?? FALLBACK_SEO.siteTitle,
     metaDescription:
-      pick(locale, entry.metaDescription, entry.metaDescriptionEn) ??
-      fallbackText(locale, FALLBACK_SETTINGS.metaDescription, FALLBACK_EN.metaDescription),
-    shareImage: filled(entry.shareImage),
-    email: filled(entry.email) ?? FALLBACK_SETTINGS.email,
-    phone: filled(entry.phone),
-    location: filled(entry.location),
-    socials: (entry.socials ?? [])
+      pick(locale, entry?.metaDescription, entry?.metaDescriptionEn) ??
+      fallbackText(locale, FALLBACK_SEO.metaDescription, FALLBACK_EN.metaDescription),
+    shareImage: filled(entry?.ogImage),
+  };
+}
+
+/** Coordonnées et identité de l'artiste, avec les valeurs de référencement. */
+export async function getSettings(locale: Locale = 'fr'): Promise<Settings> {
+  const [entry, seo] = await Promise.all([
+    reader.singletons.settings.read(),
+    getSeo(locale),
+  ]);
+
+  return {
+    siteName: filled(entry?.siteName) ?? FALLBACK_SETTINGS.siteName,
+    tagline:
+      pick(locale, entry?.tagline, entry?.taglineEn) ??
+      fallbackText(locale, FALLBACK_SETTINGS.tagline, FALLBACK_EN.tagline),
+    seoTitle: seo.siteTitle,
+    metaDescription: seo.metaDescription,
+    shareImage: seo.shareImage,
+    email: filled(entry?.email) ?? FALLBACK_SETTINGS.email,
+    phone: filled(entry?.phone),
+    location: filled(entry?.location),
+    socials: (entry?.socials ?? [])
       .filter((social) => Boolean(social?.label && social?.url))
       .map((social) => ({ label: social!.label.trim(), url: social!.url.trim() })),
     footerNote:
-      pick(locale, entry.footerNote, entry.footerNoteEn) ??
-      (locale === 'en' ? FALLBACK_EN.footerNote : null),
-    copyright: filled(entry.copyright) ?? FALLBACK_SETTINGS.copyright,
+      pick(locale, entry?.footerNote, entry?.footerNoteEn) ??
+      fallbackText(locale, FALLBACK_FOOTER_NOTE, FALLBACK_EN.footerNote),
+    copyright: filled(entry?.copyright) ?? FALLBACK_SETTINGS.copyright,
   };
 }
 
@@ -666,14 +701,6 @@ export async function getExpositions(locale: Locale = 'fr'): Promise<Exposition[
       if (yearB !== yearA) return yearB - yearA;
       return a.title.localeCompare(b.title, sortLocale);
     });
-}
-
-export async function getExposition(
-  slug: string,
-  locale: Locale = 'fr'
-): Promise<Exposition | null> {
-  const expositions = await getExpositions(locale);
-  return expositions.find((exposition) => exposition.slug === slug) ?? null;
 }
 
 /** Expositions voisines (précédente / suivante) dans l'ordre d'affichage. */
