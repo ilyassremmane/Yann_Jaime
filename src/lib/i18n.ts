@@ -37,7 +37,7 @@ const fr = {
   },
   langSwitch: { label: 'Changer de langue' },
   skipLink: 'Aller au contenu principal',
-  footer: { browse: 'Parcourir', contact: 'Contact' },
+  footer: { browse: 'Parcourir', contact: 'Contact', credits: 'Site réalisé par' },
 
   home: {
     selection: 'Sélection',
@@ -183,7 +183,7 @@ const en: typeof fr = {
   },
   langSwitch: { label: 'Change language' },
   skipLink: 'Skip to main content',
-  footer: { browse: 'Browse', contact: 'Contact' },
+  footer: { browse: 'Browse', contact: 'Contact', credits: 'Website crafted by' },
 
   home: {
     selection: 'Selection',

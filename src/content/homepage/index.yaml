@@ -1,6 +1,17 @@
 heroTitle: Yann Jaime
 heroMediaType: image
 heroImage: /images/home/heroImage.webp
+heroSlides:
+  - theme: arch-fenetres-tours-nuages
+    slug: paradise-en-cours
+  - theme: bath
+    slug: rebirth-01
+  - theme: arch-fenetres-tours-nuages
+    slug: pause-final
+  - theme: arch-fenetres-tours-nuages
+    slug: hard-work
+  - theme: nature-morte
+    slug: teatime
 heroCaption: « Hard Work », 2024 — huile sur canevas, 92 × 73 × 2,5 cm.
 introTitle: Espaces habités
 introTitleEn: Space

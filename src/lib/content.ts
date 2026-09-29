@@ -19,6 +19,8 @@ export type Theme = {
   tagline: string | null;
   cover: string | null;
   intro: string | null;
+  /** « Ordre d'affichage » saisi dans Keystatic (null = non numéroté). */
+  order: number | null;
   /** Faux = thème masqué (et toutes ses œuvres) sur le site public. */
   visible: boolean;
 };
@@ -33,9 +35,29 @@ const FALLBACK_COVERS: Record<string, string> = {
   bath: '/images/works/bath/bains/bains.webp',
   'grands-parents': '/images/works/grands-parents/autoroute/autoroute.webp',
   nature: '/images/works/nature/foret/foret.webp',
-  'nature-morte': '/images/works/nature-morte/breakfast/breakfast.webp',
+  'nature-morte': '/images/works/nature-morte/breakfast-2/breakfast-2.webp',
   portrait: '/images/works/portrait/em-portrait/em-portrait.webp',
 };
+
+/**
+ * « Ordre d'affichage » saisi dans Keystatic : un numéro de position, ou rien.
+ * Tout ce qui n'est pas un nombre exploitable (champ vide, ancien YAML) = non ordonné.
+ */
+function orderOf(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+/**
+ * Comparateur d'ordre éditorial : les entrées numérotées passent d'abord,
+ * dans l'ordre croissant ; les autres sont renvoyées à la fin (null = « pas
+ * d'avis », le tri enchaîne alors sur l'ordre par défaut de la liste).
+ */
+function byEditorialOrder(a: { order: number | null }, b: { order: number | null }): number | null {
+  if (a.order === null && b.order === null) return null;
+  if (a.order === null) return 1;
+  if (b.order === null) return -1;
+  return a.order - b.order || null;
+}
 
 /**
  * Tous les thèmes : entrées du CMS quand elles existent, sinon repli
@@ -65,6 +87,7 @@ export async function getThemes(locale: Locale = 'fr'): Promise<Theme[]> {
       cover?: string | null;
       intro?: string | null;
       introEn?: string | null;
+      order?: number | null;
       visible?: boolean | null;
     };
     const historic = THEMES.find((theme) => theme.value === slug);
@@ -77,12 +100,18 @@ export async function getThemes(locale: Locale = 'fr'): Promise<Theme[]> {
       tagline: pick(locale, entry.tagline, entry.taglineEn),
       cover: filled(entry.cover) ?? FALLBACK_COVERS[slug] ?? null,
       intro: pick(locale, entry.intro, entry.introEn),
+      /* Champ « Ordre d'affichage » du CMS : vide = après les numérotés. */
+      order: orderOf(entry.order),
       /* Absent du YAML (avant la case « Afficher ») = visible. */
       visible: entry.visible !== false,
     };
   });
+
+  /* Ordre manuel du CMS d'abord, ordre historique ensuite (tri stable). */
+  const ordered = [...themes].sort((a, b) => byEditorialOrder(a, b) ?? 0);
+
   /* Thème masqué : retiré du site public (listes + pages + œuvres). */
-  return themes.filter((theme) => theme.visible);
+  return ordered.filter((theme) => theme.visible);
 }
 
 /**
@@ -130,6 +159,8 @@ export type Work = {
   featured: boolean;
   /** Vrai = œuvre choisie pour couvrir la carte de son thème sur /oeuvres. */
   isThemeCover: boolean;
+  /** « Ordre d'affichage » saisi dans Keystatic (null = non numérotée). */
+  order: number | null;
   /** Faux = œuvre masquée sur le site public (case « Afficher » du CMS). */
   visible: boolean;
 };
@@ -186,12 +217,22 @@ export type Homepage = {
   heroSubtitle: string | null;
   heroMediaType: 'image' | 'video';
   heroImage: string | null;
+  heroSlides: HeroSlideRef[];
   heroVideoUrl: string | null;
   heroCaption: string | null;
   introTitle: string | null;
   introText: string | null;
   selection: string[];
   worksLinkLabel: string;
+};
+
+/**
+ * Référence « thème / slug » saisie dans Keystatic pour le carrousel d’accueil.
+ * Le site résout ensuite chaque couple vers la fiche réelle (titre, image, URL).
+ */
+export type HeroSlideRef = {
+  theme: string;
+  slug: string;
 };
 
 export type About = {
@@ -468,6 +509,8 @@ export async function getWorks(locale: Locale = 'fr'): Promise<Work[]> {
         description: pick(locale, entry.description, entry.descriptionEn),
         featured: Boolean(entry.featured),
         isThemeCover: Boolean(entry.isThemeCover),
+        /* Champ « Ordre d'affichage » du CMS : vide = après les numérotées. */
+        order: orderOf(entry.order),
         /* Absent du YAML (avant la case « Afficher ») = visible. */
         visible: entry.visible !== false,
       }))
@@ -478,6 +521,9 @@ export async function getWorks(locale: Locale = 'fr'): Promise<Work[]> {
     .flat()
     .filter((work) => work.visible)
     .sort((a, b) => {
+      /* 1. ordre manuel du CMS, 2. année la plus récente, 3. titre. */
+      const editorial = byEditorialOrder(a, b);
+      if (editorial !== null) return editorial;
       const yearA = Number(a.year ?? 0);
       const yearB = Number(b.year ?? 0);
       if (yearB !== yearA) return yearB - yearA;
@@ -491,6 +537,7 @@ export async function getHomepage(locale: Locale = 'fr'): Promise<Homepage> {
     heroSubtitle: 'Portfolio 2021-2026',
     heroMediaType: 'image',
     heroImage: null,
+    heroSlides: [],
     heroVideoUrl: null,
     heroCaption: null,
     introTitle: null,
@@ -502,11 +549,34 @@ export async function getHomepage(locale: Locale = 'fr'): Promise<Homepage> {
   const entry = await reader.singletons.homepage.read();
   if (!entry) return fallback;
 
+  /*
+   * Carrousel du haut de page : Keystatic enregistre des objets `{ theme, slug }`.
+   * La sélection du bas de page reste une simple liste de slugs.
+   */
+  const rawSlides = Array.isArray(entry.heroSlides) ? entry.heroSlides : [];
+  const heroSlides = rawSlides
+    .map((item): HeroSlideRef | null => {
+      if (item && typeof item === 'object') {
+        const theme =
+          typeof (item as { theme?: unknown }).theme === 'string'
+            ? String((item as { theme?: unknown }).theme).trim()
+            : '';
+        const slug =
+          typeof (item as { slug?: unknown }).slug === 'string'
+            ? String((item as { slug?: unknown }).slug).trim()
+            : '';
+        return slug ? { theme, slug } : null;
+      }
+      return null;
+    })
+    .filter((item): item is HeroSlideRef => item !== null);
+
   return {
     heroTitle: pick(locale, entry.heroTitle, entry.heroTitleEn) ?? fallback.heroTitle,
     heroSubtitle: pick(locale, entry.heroSubtitle, entry.heroSubtitleEn),
     heroMediaType: entry.heroMediaType === 'video' ? 'video' : 'image',
     heroImage: filled(entry.heroImage),
+    heroSlides,
     heroVideoUrl: filled(entry.heroVideoUrl),
     heroCaption: pick(locale, entry.heroCaption, entry.heroCaptionEn),
     introTitle: pick(locale, entry.introTitle, entry.introTitleEn),

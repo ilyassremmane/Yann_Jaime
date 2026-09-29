@@ -421,18 +421,6 @@
   },
   {
     "theme": "nature-morte",
-    "source": "BREAKFAST.JPG",
-    "file": "/images/works/nature-morte/breakfast/breakfast.webp",
-    "thumb": "/images/works/thumbs/nature-morte/breakfast/breakfast.webp",
-    "width": 1920,
-    "height": 1440,
-    "bytes": 412422,
-    "srcWidth": 4032,
-    "srcHeight": 3024,
-    "srcBytes": 4927076
-  },
-  {
-    "theme": "nature-morte",
     "source": "CLOWN.JPG",
     "file": "/images/works/nature-morte/clown/clown.webp",
     "thumb": "/images/works/thumbs/nature-morte/clown/clown.webp",

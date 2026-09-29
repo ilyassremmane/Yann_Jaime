@@ -32,9 +32,15 @@ html {
 
 html,
 body {
-  overflow-x: hidden;
+  /*
+   * `clip` et non `hidden` : on bloque le débordement horizontal sans créer de
+   * conteneur défilable. Un `overflow-x: hidden` + `overscroll-behavior-x: none`
+   * sur html/body coupe en effet le geste natif « balayer → retour arrière »
+   * du pavé tactile (Chrome/Safari macOS). On laisse donc `overscroll-behavior-x`
+   * à `auto` : le retour arrière fonctionne, et le clip empêche tout scroll latéral.
+   */
   overflow-x: clip;
-  overscroll-behavior-x: none;
+  overscroll-behavior-x: auto;
   max-width: 100%;
 }
 

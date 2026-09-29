@@ -132,6 +132,11 @@ function worksSchema(theme: ThemeValue) {
         'Affiche cette œuvre en couverture de la carte du thème sur /oeuvres (une seule œuvre par thème).',
       defaultValue: false,
     }),
+    order: fields.number({
+      label: 'Ordre d’affichage',
+      description:
+        'Numéro de position dans la page du thème (1 = première œuvre). Laisser vide : l’œuvre arrive après celles numérotées, classée par année puis par titre.',
+    }),
     visible: fields.checkbox({
       label: 'Afficher cette œuvre sur le site',
       description: 'Décocher retire l’œuvre du site public (listes, pages détail, sélection d’accueil).',
@@ -209,6 +214,11 @@ export default config({
         introEn: fields.text({
           label: 'Texte de présentation (anglais)',
           multiline: true,
+        }),
+        order: fields.number({
+          label: 'Ordre d’affichage',
+          description:
+            'Numéro de position de la carte sur /oeuvres (1 = première). Laisser vide : le thème prend place après les thèmes numérotés, dans l’ordre historique.',
         }),
         visible: fields.checkbox({
           label: 'Afficher ce thème sur le site',
@@ -388,11 +398,37 @@ export default config({
           defaultValue: 'image',
         }),
         heroImage: fields.image({
-          label: 'Photo principale',
-          description: 'Image affichée en grand sur l’accueil.',
+          label: 'Photo principale (repli)',
+          description:
+            'Image de secours utilisée seulement si le carrousel ci-dessous est vide. En usage normal, le haut de page affiche le carrousel.',
           directory: HOME_DIR,
           publicPath: `${HOME_URL}/`,
         }),
+        heroSlides: fields.array(
+          fields.object({
+            theme: fields.select({
+              label: 'Thème',
+              description: 'Dossier / collection où se trouve la fiche de l’œuvre.',
+              options: THEMES.map((theme) => ({ label: theme.label, value: theme.value })),
+              defaultValue: THEMES[0].value,
+            }),
+            slug: fields.text({
+              label: 'Slug de l’œuvre',
+              description:
+                'Nom exact du fichier .yaml de l’œuvre, sans extension (ex. paradise-en-cours).',
+              validation: { isRequired: true },
+            }),
+          }),
+          {
+            label: 'Carrousel d’accueil (5 photos)',
+            description:
+              '5 œuvres affichées en grand dans le carrousel du haut de page, dans l’ordre souhaité. Choisir le thème, puis saisir le slug exact de la fiche.',
+            itemLabel: (props) =>
+              [props.fields.theme.value, props.fields.slug.value].filter(Boolean).join(' / ') ||
+              'Œuvre',
+            validation: { length: { max: 5 } },
+          }
+        ),
         heroVideoUrl: fields.text({
           label: 'Vidéo principale (URL ou fichier)',
           description:
@@ -414,14 +450,12 @@ export default config({
           description: 'Vide = on affiche le texte français.',
           multiline: true,
         }),
-        selection: fields.array(
-          fields.relationship({ label: 'Œuvre', collection: 'works' }),
-          {
-            label: 'Sélection d’œuvres',
-            description: 'Œuvres mises en avant sur l’accueil, dans l’ordre souhaité.',
-            itemLabel: (props) => props.value ?? 'Œuvre',
-          }
-        ),
+        selection: fields.array(fields.text({ label: 'Slug de l’œuvre' }), {
+          label: 'Sélection d’œuvres (bas de page)',
+          description:
+            'Œuvres montrées en entier plus bas sur l’accueil, dans l’ordre souhaité (6 ou plus possibles). Saisir le slug exact de la fiche (nom du fichier .yaml sans extension), par exemple : paradise-en-cours, rebirth-01, pause-final, hard-work, teatime, chess-player. Le thème est retrouvé automatiquement : deux œuvres de thèmes différents peuvent partager le même slug.',
+          itemLabel: (props) => props.value ?? 'Œuvre',
+        }),
         worksLinkLabel: fields.text({
           label: 'Libellé du lien vers /oeuvres',
           defaultValue: 'Voir toutes les œuvres',

@@ -281,7 +281,9 @@ details[data-mobile-menu][open] .mobile-panel {
 .hero-full {
   height: 100vh;
   height: 100svh;
-  min-height: 32rem;
+  height: 100dvh;
+  min-height: 100svh;
+  min-height: 100dvh;
 }
 
 /* ------------------------------------------------------------------ */
@@ -348,6 +350,33 @@ img[data-fade].is-loaded {
   from {
     opacity: 0;
     transform: scale(0.985);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Grille maçonnerie (pages de thèmes) : colonnes CSS qui empilent les     */
+/* œuvres sans vide vertical — chaque carte suit la précédente, même si    */
+/* les hauteurs diffèrent.                                                  */
+/* ------------------------------------------------------------------ */
+.masonry-grid {
+  column-count: 1;
+  column-gap: 1.5rem;
+}
+
+.masonry-grid .masonry-item {
+  break-inside: avoid;
+  margin-bottom: 3rem;
+}
+
+@media (min-width: 640px) {
+  .masonry-grid {
+    column-count: 2;
+  }
+}
+
+@media (min-width: 1024px) {
+  .masonry-grid {
+    column-count: 3;
   }
 }
 

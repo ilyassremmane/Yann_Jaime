@@ -1,7 +1,8 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import WorkCard from '../components/WorkCard.astro';
-import { getHomepage, getSettings, getWorks, paragraphs } from '../lib/content';
+import HeroCarousel from '../components/HeroCarousel.vue';
+import { getHomepage, getSettings, getWorks, paragraphs, themeLabel, thumbFor } from '../lib/content';
 import { SITE_URL, artist, breadcrumbs, graph, imageCollectionPage, website } from '../lib/seo';
 import { imageSize } from '../lib/content';
 import { type Locale, ui, withLocale } from '../lib/i18n';
@@ -20,12 +21,32 @@ const [homepage, works, settings] = await Promise.all([
   getSettings(locale),
 ]);
 
-/** Œuvres de la sélection d'accueil, sinon repli sur les œuvres mises en avant. */
+/** Œuvres choisies dans Keystatic pour le bas de page (« Sélection d’œuvres ») : 6 ou plus, montrées en entier. */
 const selected = homepage.selection
   .map((slug) => works.find((work) => work.slug === slug))
   .filter((work): work is NonNullable<typeof work> => Boolean(work));
 
-const highlight = (selected.length > 0 ? selected : works.filter((work) => work.featured)).slice(0, 6);
+const highlight = selected.length > 0 ? selected : works.filter((work) => work.featured).slice(0, 6);
+
+/** Carrousel du hero : exactement la liste « Carrousel d’accueil (5 photos) » de Keystatic. */
+const carouselWorks = homepage.heroSlides
+  .map((ref) =>
+    works.find((work) =>
+      ref.theme ? work.theme === ref.theme && work.slug === ref.slug : work.slug === ref.slug
+    )
+  )
+  .filter((work): work is NonNullable<typeof work> => Boolean(work))
+  .slice(0, 5)
+  .map((w) => ({
+  title: w.title,
+  year: w.year,
+  theme: w.theme,
+  slug: w.slug,
+  image: w.image,
+  thumb: thumbFor(w.image),
+  url: withLocale(`/oeuvres/${w.theme}/${w.slug}`, locale),
+  themeLabel: themeLabel(w.theme, locale),
+}));
 
 const introParagraphs = paragraphs(homepage.introText);
 
@@ -68,76 +89,76 @@ const structuredData = graph([
 
 <BaseLayout locale={locale} structuredData={structuredData} headerVariant="overlay">
   <!--
-    Hero plein écran : l'image occupe toute la page et passe SOUS l'en-tête.
-    Deux voiles dégradés assurent la lisibilité (en haut : l'en-tête, en bas : la légende).
+    Hero plein écran : carrousel de 5 œuvres défilantes en plein format,
+    passant sous l'en-tête transparent.
   -->
   <section class="relative w-full overflow-hidden bg-ink">
-    <div class="hero-full relative w-full">
-      {
-        showVideo ? (
-          embedUrl ? (
-            <iframe
-              src={embedUrl}
-              title={`${t.home.videoLabel} — ${homepage.heroTitle}`}
-              class="absolute inset-0 h-full w-full"
-              allow="autoplay; fullscreen; picture-in-picture"
-              allowfullscreen
-              loading="eager"
-            />
-          ) : (
-            <video
-              class="absolute inset-0 h-full w-full object-cover"
-              src={videoUrl}
-              poster={homepage.heroImage ?? undefined}
-              autoplay
-              muted
-              loop
-              playsinline
-            />
-          )
-        ) : homepage.heroImage ? (
-          <img
-            src={homepage.heroImage}
-            alt={homepage.heroCaption ?? t.home.workAlt(homepage.heroTitle)}
-            width={heroSize?.width}
-            height={heroSize?.height}
-            class="absolute inset-0 h-full w-full object-cover"
-            fetchpriority="high"
-            decoding="async"
-          />
-        ) : (
-          <div class="absolute inset-0 flex items-center justify-center">
-            <p class="eyebrow text-canvas/70">{t.home.heroPlaceholder}</p>
-          </div>
-        )
-      }
-
-      <div
-        class="pointer-events-none absolute inset-x-0 top-0 h-44 bg-gradient-to-b from-ink/60 via-ink/20 to-transparent sm:h-56"
-        aria-hidden="true"
-      ></div>
-      <div
-        class="pointer-events-none absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-ink/80 via-ink/35 to-transparent"
-        aria-hidden="true"
-      ></div>
-
-      <!-- Titre et légende, posés sur l'œuvre -->
-      <div class="absolute inset-x-0 bottom-0">
-        <div class="mx-auto max-w-gallery px-4 pb-10 sm:px-8 sm:pb-16">
-          <p class="eyebrow text-canvas/70">{homepage.heroSubtitle ?? t.home.eyebrow}</p>
-          <h1 class="font-display mt-3 text-4xl leading-[1.02] text-canvas sm:text-6xl lg:text-7xl">
-            {homepage.heroTitle}
-          </h1>
+    {
+      carouselWorks.length > 0 ? (
+        <HeroCarousel
+          client:load
+          works={carouselWorks}
+          heroTitle={homepage.heroTitle}
+          heroSubtitle={homepage.heroSubtitle ?? t.home.eyebrow}
+        />
+      ) : (
+        <div class="hero-full relative w-full">
           {
-            homepage.heroCaption && (
-              <p class="mt-4 max-w-measure text-sm leading-relaxed text-canvas/80">
-                {homepage.heroCaption}
-              </p>
+            showVideo ? (
+              embedUrl ? (
+                <iframe
+                  src={embedUrl}
+                  title={`${t.home.videoLabel} — ${homepage.heroTitle}`}
+                  class="absolute inset-0 h-full w-full"
+                  allow="autoplay; fullscreen; picture-in-picture"
+                  allowfullscreen
+                  loading="eager"
+                />
+              ) : (
+                <video
+                  class="absolute inset-0 h-full w-full object-cover"
+                  src={videoUrl}
+                  poster={homepage.heroImage ?? undefined}
+                  autoplay
+                  muted
+                  loop
+                  playsinline
+                />
+              )
+            ) : homepage.heroImage ? (
+              <img
+                src={homepage.heroImage}
+                alt={homepage.heroCaption ?? t.home.workAlt(homepage.heroTitle)}
+                width={heroSize?.width}
+                height={heroSize?.height}
+                class="absolute inset-0 h-full w-full object-cover"
+                fetchpriority="high"
+                decoding="async"
+              />
+            ) : (
+              <div class="absolute inset-0 flex items-center justify-center">
+                <p class="eyebrow text-canvas/70">{t.home.heroPlaceholder}</p>
+              </div>
             )
           }
+          <div class="pointer-events-none absolute inset-x-0 top-0 h-44 bg-gradient-to-b from-ink/60 via-ink/20 to-transparent sm:h-56" aria-hidden="true" />
+          <div class="pointer-events-none absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-ink/80 via-ink/35 to-transparent" aria-hidden="true" />
+          <div class="absolute inset-x-0 bottom-0">
+            <div class="mx-auto max-w-gallery px-4 pb-10 sm:px-8 sm:pb-16">
+              <p class="eyebrow text-canvas/70">{homepage.heroSubtitle ?? t.home.eyebrow}</p>
+              <h1 class="font-display mt-3 text-4xl leading-[1.02] text-canvas sm:text-6xl lg:text-7xl">
+                {homepage.heroTitle}
+              </h1>
+              {homepage.heroCaption && (
+                <p class="mt-4 max-w-measure text-sm leading-relaxed text-canvas/80">
+                  {homepage.heroCaption}
+                </p>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+      )
+    }
   </section>
   <!-- Introduction -->
   {
@@ -159,7 +180,7 @@ const structuredData = graph([
     )
   }
 
-  <!-- Sélection d'œuvres -->
+  <!-- Sélection d'œuvres (formats d'origine conservés) -->
   {
     highlight.length > 0 && (
       <section class="mx-auto max-w-gallery px-4 pb-16 sm:px-8 sm:pb-24">
@@ -173,7 +194,7 @@ const structuredData = graph([
           </a>
         </div>
 
-        <div class="grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+        <div class="grid grid-cols-1 items-start gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
           {
             highlight.map((work, index) => (
               <WorkCard work={work} priority={index < 3} index={index} locale={locale} />
