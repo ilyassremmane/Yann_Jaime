@@ -6,13 +6,16 @@
   "description": "Portfolio en Astro SSG de l'artiste peintre Yann Jaime — série Tours Nuages, intérieurs, architectures et figures",
   "scripts": {
     "dev": "astro dev",
+    "predev": "node scripts/compress-uploads.js",
     "build": "astro build",
+    "prebuild": "node scripts/compress-uploads.js",
     "build:static": "KEYSTATIC_DISABLED=1 astro build",
     "preview": "astro preview",
     "sync": "astro sync",
     "check": "astro check",
     "astro": "astro",
     "images:optimize": "node scripts/optimize-images.js",
+    "images:safety": "node scripts/compress-uploads.js",
     "images:logo": "node scripts/optimize-logo.mjs",
     "content:seed": "node scripts/seed-content.mjs"
   },

@@ -14,9 +14,10 @@ interface Props {
   locale?: Locale;
   /**
    * `true` (défaut) = image encadrée : fond blanc + filet, hauteur naturelle.
-   * `false` = sans cadre : l'image est centrée dans une boîte de hauteur fixe,
-   * sur le fond de la page — les titres restent alignés ligne par ligne.
-   * Utilisé sur l'accueil (« Sélection d'œuvres »).
+   * `false` (accueil) = sans cadre : chaque photo occupe 100 % de la largeur
+   * de la colonne (les formats non carrés s'affichent en grand), centrée
+   * verticalement dans la rangée ; le bloc titre a une hauteur minimale fixe,
+   * donc les titres s'alignent ligne par ligne.
    */
   frame?: boolean;
 }
@@ -26,20 +27,31 @@ const t = ui[locale];
 const meta = workMeta(work);
 const ratioClass = frame
   ? 'relative flex items-center justify-center bg-white p-0 overflow-hidden'
-  /* Sans cadre : boîte de hauteur fixe → formats portrait/paysage alignés */
-  : 'relative flex h-60 w-full items-center justify-center overflow-hidden sm:h-72 lg:h-80';
+  /* Sans cadre : largeur 100 % de la colonne, hauteur naturelle de l'image */
+  : 'relative w-full overflow-hidden';
 const imgClass = frame
   ? 'block h-auto w-full max-w-full object-contain transition-transform duration-[1200ms] ease-soft group-hover:scale-[1.02]'
-  : 'block h-full w-full object-contain transition-transform duration-[1200ms] ease-soft group-hover:scale-[1.02]';
+  : 'block h-auto w-full object-contain transition-transform duration-[1200ms] ease-soft group-hover:scale-[1.02]';
 ---
 
-<article class="work-card group" style={`--card-delay: ${Math.min(index % 12, 11) * 55}ms`}>
+<article
+  class:list={['work-card group', !frame && 'flex h-full flex-col']}
+  style={`--card-delay: ${Math.min(index % 12, 11) * 55}ms`}
+>
   <a
     href={withLocale(`/oeuvres/${work.theme}/${work.slug}`, locale)}
     data-work-card={work.slug}
-    class="block focus-visible:outline-offset-4"
+    class:list={[frame ? 'block' : 'flex h-full flex-col', 'focus-visible:outline-offset-4']}
   >
-    <figure class:list={['overflow-hidden', frame ? 'work-frame bg-white' : '']}>
+    <figure
+      class:list={
+        frame
+          ? 'work-frame overflow-hidden bg-white'
+          : /* La figure occupe toute la hauteur de la rangée : l'image est
+               centrée verticalement, la ligne de titre reste au même niveau. */
+            'flex w-full flex-1 items-center justify-center overflow-hidden'
+      }
+    >
       <div class={ratioClass}>
         {
           work.image ? (
@@ -53,7 +65,7 @@ const imgClass = frame
               class={imgClass}
             />
           ) : (
-            <div class="flex h-full w-full items-center justify-center text-xs uppercase tracking-[0.2em] text-clay">
+            <div class="flex min-h-48 w-full items-center justify-center text-xs uppercase tracking-[0.2em] text-clay">
               {t.explorer.comingSoon}
             </div>
           )
@@ -61,7 +73,8 @@ const imgClass = frame
       </div>
     </figure>
 
-    <div class="mt-4">
+    <!-- Hauteur minimale fixe : le premier trait de titre démarre toujours au même endroit -->
+    <div class:list={[frame ? 'mt-4' : 'mt-4 min-h-[7.5rem]']}>
       <h3 class="font-display text-lg leading-snug text-ink sm:text-xl">
         {work.title}
         {work.year && <span class="text-clay">, {work.year}</span>}

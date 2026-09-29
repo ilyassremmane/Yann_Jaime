@@ -115,6 +115,23 @@ compte, c’est le dossier ; les fiches issues de `npm run images:optimize` util
 `<slug>.webp`. Une image sans vignette dans `thumbs/` est affichée directement (repli géré par
 `thumbFor`), et sans entrée dans le manifeste, son ratio est supposé 4/3 (`imageSize`).
 
+### Compression automatique des photos téléversées
+
+Keystatic **ne traite pas** les fichiers : il les écrit tels quels. C’est
+`scripts/compress-uploads.js` qui s’en charge, sans aucune intervention de l’artiste
+(« pré » de `dev` et `build` dans `package.json`, donc à chaque démarrage du serveur de
+développement et à chaque build Netlify ; à la demande avec `npm run images:safety`). Il :
+
+1. convertit en WebP les formats que les navigateurs ne savent pas afficher (tif, tiff…),
+   renomme le fichier **et met à jour le YAML de la fiche** (`image:`, `gallery:`, `cover:`) ;
+2. crée la vignette `thumbs/…` manquante (720 px) ;
+3. ré-encode au-delà de **1,5 Mo ou 1920 px de large** — même nom, donc le YAML reste valable ;
+4. rafraîchit `src/data/*-manifest.json` (dimensions des balises `<img>`).
+
+Un fichier déjà conforme est ignoré : le build reste rapide et le contenu existant n’est pas
+recompressé. En mode GitHub, la compression s’applique au moment du build Netlify — le fichier
+téléversé, lui, reste intact dans le dépôt.
+
 > En production, le stockage `local` n’est pas disponible (il nécessite le serveur de
 > développement) : le mode GitHub prend le relais.
 
