@@ -12,15 +12,25 @@ interface Props {
   index?: number;
   /** Langue de la page (libellés et lien vers la fiche). */
   locale?: Locale;
+  /**
+   * `true` (défaut) = image encadrée : fond blanc + filet, hauteur naturelle.
+   * `false` = sans cadre : l'image est centrée dans une boîte de hauteur fixe,
+   * sur le fond de la page — les titres restent alignés ligne par ligne.
+   * Utilisé sur l'accueil (« Sélection d'œuvres »).
+   */
+  frame?: boolean;
 }
 
-const { work, priority = false, index = 0, locale = 'fr' } = Astro.props;
+const { work, priority = false, index = 0, locale = 'fr', frame = true } = Astro.props;
 const t = ui[locale];
 const meta = workMeta(work);
-const ratioClass =
-  'relative flex items-center justify-center bg-white p-0 overflow-hidden';
-const imgClass =
-  'block h-auto w-full max-w-full object-contain transition-transform duration-[1200ms] ease-soft group-hover:scale-[1.02]';
+const ratioClass = frame
+  ? 'relative flex items-center justify-center bg-white p-0 overflow-hidden'
+  /* Sans cadre : boîte de hauteur fixe → formats portrait/paysage alignés */
+  : 'relative flex h-60 w-full items-center justify-center overflow-hidden sm:h-72 lg:h-80';
+const imgClass = frame
+  ? 'block h-auto w-full max-w-full object-contain transition-transform duration-[1200ms] ease-soft group-hover:scale-[1.02]'
+  : 'block h-full w-full object-contain transition-transform duration-[1200ms] ease-soft group-hover:scale-[1.02]';
 ---
 
 <article class="work-card group" style={`--card-delay: ${Math.min(index % 12, 11) * 55}ms`}>
@@ -29,7 +39,7 @@ const imgClass =
     data-work-card={work.slug}
     class="block focus-visible:outline-offset-4"
   >
-    <figure class="work-frame overflow-hidden bg-white">
+    <figure class:list={['overflow-hidden', frame ? 'work-frame bg-white' : '']}>
       <div class={ratioClass}>
         {
           work.image ? (
