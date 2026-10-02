@@ -1,11 +1,15 @@
-siteName: "Yann Jaime"
-tagline: "Peintre"
-taglineEn: "Painter"
-email: "sepulveda_yann@yahoo.fr"
-location: "Paris — Lausanne"
+siteName: Yann Jaime
+tagline: Peintre
+taglineEn: Painter
+email: contact@yannjaime.com
+location: Paris
 socials:
-  - label: "Instagram"
-    url: "https://www.instagram.com/yann_jaime_braun/"
-footerNote: "Toutes les œuvres sont protégées par le droit d’auteur. Reproduction interdite sans autorisation écrite."
-footerNoteEn: "All works are protected by copyright. Reproduction forbidden without written permission."
-copyright: "© Yann Jaime"
+  - label: Instagram
+    url: https://www.instagram.com/yann_jaime_braun/
+footerNote: >-
+  Toutes les œuvres sont protégées par le droit d’auteur. Reproduction interdite
+  sans autorisation écrite.
+footerNoteEn: >-
+  All works are protected by copyright. Reproduction forbidden without written
+  permission.
+copyright: © Yann Jaime
