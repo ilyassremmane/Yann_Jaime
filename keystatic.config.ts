@@ -1,20 +1,5 @@
-import { config, fields, collection, singleton } from '@keystatic/core';
-
-/**
- * Thèmes historiques, dans leur ordre d'affichage d'origine.
- * La collection « Thèmes » du CMS les remplace au fur et à mesure : cette liste
- * sert de repli et de clé de migration pour les contenus antérieurs.
- */
-export const THEMES = [
-  { value: 'arch-fenetres-tours-nuages', label: 'Architectures · Fenêtres · Tours Nuages', labelEn: 'Architectures · Windows · Cloud Towers' },
-  { value: 'bath', label: 'Bath', labelEn: 'Bath' },
-  { value: 'grands-parents', label: 'Grands-parents', labelEn: 'Grandparents' },
-  { value: 'nature', label: 'Nature', labelEn: 'Nature' },
-  { value: 'nature-morte', label: 'Nature morte', labelEn: 'Still life' },
-  { value: 'portrait', label: 'Portrait', labelEn: 'Portrait' },
-] as const;
-
-export type ThemeValue = (typeof THEMES)[number]['value'];
+import { config, fields, collection, singleton, type Collection } from '@keystatic/core';
+import cmsIndexRaw from './src/data/cms-index.json';
 
 /** Dossiers publics des médias (un dossier par famille de contenus). */
 const WORKS_DIR = 'public/images/works';
@@ -47,14 +32,14 @@ const DOCS_URL = '/documents/about';
 const GITHUB_REPO = 'ilyassremmane/Yann_Jaime';
 
 /**
- * Schéma commun aux six collections d'œuvres (une par thème).
+ * Schéma commun aux collections d'œuvres (une par thème, générées ci-dessus).
  *
  * Le dossier d'images est propre au thème : l'administration Keystatic y ajoute
  * le nom de l'œuvre, soit `public/images/works/<thème>/<œuvre>/<fichier>`.
  * La couverture d'un thème est désignée depuis une œuvre (`isThemeCover`) : une
- * relation unique ne peut pas viser six collections à la fois.
+ * relation unique ne peut pas viser plusieurs collections à la fois.
  */
-function worksSchema(theme: ThemeValue) {
+function worksSchema(theme: string) {
   const directory = `${WORKS_DIR}/${theme}`;
   const publicPath = `${WORKS_URL}/${theme}/`;
 
@@ -137,6 +122,84 @@ function worksSchema(theme: ThemeValue) {
   };
 }
 
+/* ------------------------------------------------------------------ */
+/* Collections dynamiques : une collection « Œuvres » par thème        */
+/* ------------------------------------------------------------------ */
+/* Les thèmes sont lus dans `src/content/themes/*.yaml` au chargement de la
+   configuration :
+   - créer un thème fait apparaître sa collection « Œuvres — … », sa entrée
+     de navigation et sa page publique ;
+   - supprimer un thème fait disparaître tout cela (les fiches orphelines
+     sont ensuite effacées du dépôt par `scripts/remove-orphan-works.js`,
+     lancé à chaque `predev` / `prebuild`). */
+
+/**
+ * Index du catalogue (thèmes + œuvres), produit par `scripts/build-cms-index.js`
+ * à chaque `predev` / `prebuild`. La configuration Keystatic est chargée par
+ * Vite ET par l'API d'administration : importer ici les ~80 fichiers YAML du
+ * catalogue rendait la page d'administration inutilisable (blocage du serveur).
+ * Un index unique, relu par le CMS, évite ce problème.
+ *
+ * À jour après l'ajout d'une œuvre ou d'un thème : relancer `npm run dev` ou
+ * `npm run build` (ou `npm run content:index`).
+ */
+/** Index lu tel quel : Vite transforme déjà le JSON en objet. */
+const cmsIndex = cmsIndexRaw as {
+  themes: { slug: string; title: string; order: number }[];
+  works: { value: string; title: string; theme: string }[];
+};
+
+/** Tous les thèmes du CMS, dans leur ordre d'affichage (puis par nom). */
+const themes = cmsIndex.themes;
+
+const themeTitleBySlug = new Map(themes.map((theme) => [theme.slug, theme.title]));
+
+/**
+ * Une collection « Œuvres » par thème, portée par le nom de son dossier.
+ * L'index `string` est requis par le type `Collections` de Keystatic ; les
+ * clés réelles (`works-<slug du thème>`) sont produites à l'exécution.
+ */
+const worksCollections: Record<string, Collection<Record<string, any>, string>> =
+  Object.fromEntries(
+    themes.map((theme) => [
+      `works-${theme.slug}`,
+      collection({
+        label: `Œuvres — ${theme.title}`,
+        slugField: 'title' as const,
+        path: `src/content/works/${theme.slug}/*`,
+        format: { data: 'yaml' },
+        columns: ['title', 'year'],
+        entryLayout: 'content',
+        schema: worksSchema(theme.slug),
+      }),
+    ])
+  );
+
+type WorkOption = { label: string; value: string; rank: number; title: string };
+
+/**
+ * Liste déroulante de toutes les œuvres (valeur « thème/slug »), classées par
+ * thème puis par titre : sert au carrousel et à la sélection de l'accueil.
+ */
+const workOptions: WorkOption[] = cmsIndex.works.map((work) => ({
+  label: `${work.title} — ${themeTitleBySlug.get(work.theme) ?? work.theme}`,
+  value: work.value,
+  rank: themes.findIndex((theme) => theme.slug === work.theme),
+  title: work.title,
+}));
+
+/** Liste déroulante : une ligne « choisir » (vide) puis toutes les œuvres. */
+const selectableWorks: WorkOption[] =
+  workOptions.length > 0
+    ? [{ label: '— Choisir une œuvre —', value: '', rank: -1, title: '' }, ...workOptions]
+    : [{ label: 'Aucune œuvre pour le moment', value: '', rank: 0, title: '' }];
+
+const workLabelByValue = new Map(selectableWorks.map((option) => [option.value, option.label]));
+
+/** Libellé affiché dans la ligne d'une liste déroulante d'œuvres. */
+const workLabel = (value: string | null | undefined): string =>
+  (value && workLabelByValue.get(value)) || 'Œuvre';
+
 export default config({
   storage: import.meta.env.DEV
     ? { kind: 'local' }
@@ -145,16 +208,16 @@ export default config({
   ui: {
     brand: { name: 'Yann Jaime — Portfolio' },
     navigation: {
-      'Œuvres': [
-        'themes',
-        'works-arch-fenetres-tours-nuages',
-        'works-bath',
-        'works-grands-parents',
-        'works-nature',
-        'works-nature-morte',
-        'works-portrait',
-        'expositions',
-      ],
+      /*
+     * Les clés `works-<slug>` n'existent qu'à l'exécution (une par thème) :
+     * TypeScript les ignore dans `keyof Collections`, d'où le `never` qui les
+     * laisse passer. Les collections, elles, sont bien transmises à Keystatic.
+     */
+    'Œuvres': [
+      'themes',
+      ...(themes.map((theme) => `works-${theme.slug}`) as never[]),
+      'expositions',
+    ],
       'Pages fixes': ['homepage', 'about', 'settings', 'seo'],
     },
   },
@@ -227,62 +290,11 @@ export default config({
     /* ---------------------------------------------------------------- */
     /* ŒUVRES                                                           */
     /* ---------------------------------------------------------------- */
-    /* Une collection par thème : Keystatic range les images d'une fiche dans le
-       dossier de son thème, soit public/images/works/<thème>/<œuvre>/. */
-    'works-arch-fenetres-tours-nuages': collection({
-      label: 'Œuvres — Architectures',
-      slugField: 'title',
-      path: 'src/content/works/arch-fenetres-tours-nuages/*',
-      format: { data: 'yaml' },
-      columns: ['title', 'year'],
-      entryLayout: 'content',
-      schema: worksSchema('arch-fenetres-tours-nuages'),
-    }),
-    'works-bath': collection({
-      label: 'Œuvres — Bath',
-      slugField: 'title',
-      path: 'src/content/works/bath/*',
-      format: { data: 'yaml' },
-      columns: ['title', 'year'],
-      entryLayout: 'content',
-      schema: worksSchema('bath'),
-    }),
-    'works-grands-parents': collection({
-      label: 'Œuvres — Grands-parents',
-      slugField: 'title',
-      path: 'src/content/works/grands-parents/*',
-      format: { data: 'yaml' },
-      columns: ['title', 'year'],
-      entryLayout: 'content',
-      schema: worksSchema('grands-parents'),
-    }),
-    'works-nature': collection({
-      label: 'Œuvres — Nature',
-      slugField: 'title',
-      path: 'src/content/works/nature/*',
-      format: { data: 'yaml' },
-      columns: ['title', 'year'],
-      entryLayout: 'content',
-      schema: worksSchema('nature'),
-    }),
-    'works-nature-morte': collection({
-      label: 'Œuvres — Nature morte',
-      slugField: 'title',
-      path: 'src/content/works/nature-morte/*',
-      format: { data: 'yaml' },
-      columns: ['title', 'year'],
-      entryLayout: 'content',
-      schema: worksSchema('nature-morte'),
-    }),
-    'works-portrait': collection({
-      label: 'Œuvres — Portrait',
-      slugField: 'title',
-      path: 'src/content/works/portrait/*',
-      format: { data: 'yaml' },
-      columns: ['title', 'year'],
-      entryLayout: 'content',
-      schema: worksSchema('portrait'),
-    }),
+    /* Une collection par thème, générée depuis src/content/themes/ :
+       créer un thème dans « Thèmes » crée sa collection « Œuvres — … » et
+       son entrée de navigation. Keystatic range les images d'une fiche dans
+       le dossier de son thème, soit public/images/works/<thème>/<œuvre>/. */
+    ...worksCollections,
 
     /* ---------------------------------------------------------------- */
     /* EXPOSITIONS                                                      */
@@ -411,26 +423,18 @@ export default config({
         }),
         heroSlides: fields.array(
           fields.object({
-            theme: fields.select({
-              label: 'Thème de l’œuvre',
-              description: 'Le dossier où se trouve la fiche (les thèmes sont listés dans « Thèmes »).',
-              options: THEMES.map((theme) => ({ label: theme.label, value: theme.value })),
-              defaultValue: THEMES[0].value,
-            }),
-            slug: fields.text({
-              label: 'Nom court de la fiche',
+            work: fields.select({
+              label: 'Œuvre à afficher',
               description:
-                'Nom exact du fichier de la fiche, sans extension (ex. paradise-en-cours). Vous le trouvez en bas de la fiche de l’œuvre, dans Keystatic.',
-              validation: { isRequired: true },
+                'Choisissez dans la liste : toutes les œuvres du site, classées par thème. Si vous venez de créer une œuvre, rafraîchissez cette page pour la voir apparaître.',
+              options: selectableWorks.map(({ label, value }) => ({ label, value })),
+              defaultValue: '',
             }),
           }),
           {
             label: 'Œuvres du carrousel d’accueil',
-            description:
-              'Jusqu’à 5 œuvres, dans l’ordre d’apparition. Choisissez le thème, puis saisissez le nom court de la fiche.',
-            itemLabel: (props) =>
-              [props.fields.theme.value, props.fields.slug.value].filter(Boolean).join(' / ') ||
-              'Œuvre',
+            description: 'Jusqu’à 5 œuvres, dans l’ordre d’apparition.',
+            itemLabel: (props) => workLabel(props.fields.work.value),
             validation: { length: { max: 5 } },
           }
         ),
@@ -462,12 +466,19 @@ export default config({
           description: 'Laissez vide pour reprendre le texte français.',
           multiline: true,
         }),
-        selection: fields.array(fields.text({ label: 'Nom court de la fiche' }), {
-          label: 'Sélection d’œuvres en bas de page',
-          description:
-            'Œuvres montrées en entier sous l’introduction, dans l’ordre souhaité. Saisissez le nom court de chaque fiche (ex. paradise-en-cours, teatime) : le thème est retrouvé automatiquement.',
-          itemLabel: (props) => props.value ?? 'Œuvre',
-        }),
+        selection: fields.array(
+          fields.select({
+            label: 'Œuvre',
+            options: selectableWorks.map(({ label, value }) => ({ label, value })),
+            defaultValue: '',
+          }),
+          {
+            label: 'Sélection d’œuvres en bas de page',
+            description:
+              'Œuvres montrées en entier sous l’introduction, dans l’ordre souhaité. Choisissez-les dans la liste (classées par thème) ; rafraîchissez la page après avoir créé une œuvre.',
+            itemLabel: (props) => workLabel(props.value),
+          }
+        ),
         worksLinkLabel: fields.text({
           label: 'Texte du lien vers la page « Œuvres »',
           defaultValue: 'Voir toutes les œuvres',

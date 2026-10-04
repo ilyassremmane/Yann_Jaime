@@ -2,16 +2,11 @@ heroTitle: Yann Jaime
 heroMediaType: image
 heroImage: /images/home/heroImage.webp
 heroSlides:
-  - theme: arch-fenetres-tours-nuages
-    slug: paradise-en-cours
-  - theme: bath
-    slug: rebirth-01
-  - theme: arch-fenetres-tours-nuages
-    slug: pause-final
-  - theme: arch-fenetres-tours-nuages
-    slug: hard-work
-  - theme: nature-morte
-    slug: teatime
+  - work: espaces-habites/paradise-en-cours
+  - work: bath/rebirth-01
+  - work: espaces-habites/pause-final
+  - work: espaces-habites/hard-work
+  - work: nature-morte/teatime
 heroCaption: « Hard Work », 2024 — huile sur canevas, 92 × 73 × 2,5 cm.
 introTitle: Espaces habités
 introTitleEn: Space
@@ -32,10 +27,10 @@ introText: >-
   villes contemporaines et les nouvelles perceptions de l’espace qu’elles
   engendrent.
 selection:
-  - paradise-en-cours
-  - rebirth-01
-  - pause-final
-  - hard-work
-  - teatime
-  - chess-player
+  - espaces-habites/paradise-en-cours
+  - bath/rebirth-01
+  - espaces-habites/pause-final
+  - espaces-habites/hard-work
+  - nature-morte/teatime
+  - espaces-habites/chess-player
 worksLinkLabel: Voir toutes les œuvres

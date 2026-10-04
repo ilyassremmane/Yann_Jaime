@@ -19,6 +19,7 @@
  */
 
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { readdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -28,15 +29,12 @@ const MANIFEST = path.join(ROOT, 'src', 'data', 'images-manifest.json');
 const OUT_DIR = path.join(ROOT, 'src', 'content', 'works');
 const FORCE = process.argv.includes('--force');
 
-/** Thèmes ayant une collection dans keystatic.config.ts. */
-const KNOWN_THEMES = new Set([
-  'arch-fenetres-tours-nuages',
-  'bath',
-  'grands-parents',
-  'nature',
-  'nature-morte',
-  'portrait',
-]);
+/** Thèmes vivants : lis dans `src/content/themes/` (source de vérité du CMS). */
+const KNOWN_THEMES = new Set(
+  readdirSync(path.join(ROOT, 'src', 'content', 'themes'))
+    .filter((name) => name.endsWith('.yaml') || name.endsWith('.yml'))
+    .map((name) => name.replace(/\.ya?ml$/, ''))
+);
 
 /**
  * Métadonnées confirmées (dossier « Portfolio 2021-2026 »).

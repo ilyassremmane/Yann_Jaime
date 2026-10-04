@@ -1,12 +1,25 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { createReader } from '@keystatic/core/reader';
-import keystaticConfig, { THEMES, type ThemeValue } from '../../keystatic.config';
+import { getCollection } from 'astro:content';
+import keystaticConfig from '../../keystatic.config';
 import type { Locale } from './i18n';
 
-/** Valeurs historiques des thèmes (clé de migration des œuvres existantes). */
-export { THEMES };
-export type { ThemeValue } from '../../keystatic.config';
+/**
+ * Thèmes de référence : ordre et libellés de repli si la collection « Thèmes »
+ * du CMS est vide. Une valeur = le nom du fichier dans `src/content/themes/` ;
+ * les thèmes créés dans Keystatic sont lus directement dans ce dossier.
+ */
+const THEMES = [
+  { value: 'espaces-habites', label: 'Espaces habités', labelEn: 'Inhabited Spaces' },
+  { value: 'bath', label: 'Bath', labelEn: 'Bath' },
+  { value: 'flashback', label: 'Flashback', labelEn: 'Flashback' },
+  { value: 'nature', label: 'Nature', labelEn: 'Nature' },
+  { value: 'nature-morte', label: 'Nature morte', labelEn: 'Still life' },
+  { value: 'portrait', label: 'Portrait', labelEn: 'Portrait' },
+] as const;
+
+type ThemeValue = (typeof THEMES)[number]['value'];
 
 /* ------------------------------------------------------------------ */
 /* Thèmes                                                              */
@@ -30,10 +43,9 @@ export type Theme = {
  * téléversée ni œuvre cochée « Couverture du thème ».
  */
 const FALLBACK_COVERS: Record<string, string> = {
-  'arch-fenetres-tours-nuages':
-    '/images/works/arch-fenetres-tours-nuages/paradise-en-cours/paradise-en-cours.webp',
+  'espaces-habites': '/images/works/espaces-habites/paradise-en-cours/paradise-en-cours.webp',
   bath: '/images/works/bath/bains/bains.webp',
-  'grands-parents': '/images/works/grands-parents/autoroute/autoroute.webp',
+  flashback: '/images/works/flashback/autoroute/autoroute.webp',
   nature: '/images/works/nature/foret/foret.webp',
   'nature-morte': '/images/works/nature-morte/breakfast-2/breakfast-2.webp',
   portrait: '/images/works/portrait/em-portrait/em-portrait.webp',
@@ -231,15 +243,17 @@ export type Homepage = {
   heroCaption: string | null;
   introTitle: string | null;
   introText: string | null;
-  selection: string[];
+  selection: HeroSlideRef[];
   worksLinkLabel: string;
 };
 
 /**
- * Référence « thème / slug » saisie dans Keystatic pour le carrousel d’accueil.
- * Le site résout ensuite chaque couple vers la fiche réelle (titre, image, URL).
+ * Référence à une œuvre saisie dans Keystatic (carrousel et sélection de la
+ * page d’accueil) : « thème/slug » dans le CMS. Le site résout ensuite chaque
+ * référence vers la fiche réelle (titre, image, URL).
  */
 export type HeroSlideRef = {
+  /** Dossier du thème ; chaîne vide = ancien format « slug seul ». */
   theme: string;
   slug: string;
 };
@@ -511,15 +525,31 @@ export async function getSettings(locale: Locale = 'fr'): Promise<Settings> {
   };
 }
 
-/**
- * Les six collections d'œuvres du CMS — une par thème (cf. keystatic.config.ts).
- * Le thème d'une œuvre est porté par son dossier, plus par un champ.
- */
-const WORK_COLLECTIONS: { key: `works-${ThemeValue}`; theme: ThemeValue }[] = THEMES.map(
-  (theme) => ({ key: `works-${theme.value}` as const, theme: theme.value })
-);
+/** Contenu brut d'une fiche d'œuvre (YAML sans schéma Astro). */
+type WorkYaml = {
+  title?: string | null;
+  titleEn?: string | null;
+  image?: string | null;
+  gallery?: (string | null)[] | null;
+  year?: string | null;
+  dimensions?: string | null;
+  technique?: string | null;
+  description?: string | null;
+  descriptionEn?: string | null;
+  featured?: boolean | null;
+  isThemeCover?: boolean | null;
+  order?: number | null;
+  visible?: boolean | null;
+};
 
-/** Toutes les œuvres, de la plus récente à la plus ancienne. */
+/**
+ * Toutes les œuvres, de la plus récente à la plus ancienne.
+ *
+ * Le thème d'une œuvre est donné par son dossier
+ * (`src/content/works/<thème>/<œuvre>.yaml`, déclaré en glob dans
+ * `src/content.config.ts`) : créer un thème dans Keystatic suffit pour que
+ * ses œuvres soient lues ici, sans réglage supplémentaire.
+ */
 export async function getWorks(locale: Locale = 'fr'): Promise<Work[]> {
   const sortLocale = locale === 'en' ? 'en' : 'fr';
 
@@ -530,31 +560,36 @@ export async function getWorks(locale: Locale = 'fr'): Promise<Work[]> {
       .map(({ slug }) => slug)
   );
 
-  const byTheme = await Promise.all(
-    WORK_COLLECTIONS.filter(({ theme }) => !hiddenThemes.has(theme)).map(async ({ key, theme }) =>
-      (await reader.collections[key].all()).map(({ slug, entry }) => ({
-        slug,
-        title: pick(locale, entry.title, entry.titleEn) ?? slug,
-        theme: theme as string,
-        image: filled(entry.image) ?? '',
-        gallery: (entry.gallery ?? []).filter((img): img is string => Boolean(img)),
-        year: filled(entry.year),
-        dimensions: filled(entry.dimensions),
-        technique: filled(entry.technique),
-        description: pick(locale, entry.description, entry.descriptionEn),
-        featured: Boolean(entry.featured),
-        isThemeCover: Boolean(entry.isThemeCover),
-        /* Champ « Ordre d'affichage » du CMS : vide = après les numérotées. */
-        order: orderOf(entry.order),
-        /* Absent du YAML (avant la case « Afficher ») = visible. */
-        visible: entry.visible !== false,
-      }))
-    )
-  );
+  const entries = await getCollection('works');
 
-  return byTheme
-    .flat()
-    .filter((work) => work.visible)
+  return entries
+    .map((entry): Work | null => {
+      const segments = entry.id.split('/');
+      const slug = segments[segments.length - 1];
+      const theme = segments.slice(0, -1).join('/');
+      if (theme.length === 0 || hiddenThemes.has(theme)) return null;
+
+      const data = entry.data as WorkYaml;
+      const work: Work = {
+        slug,
+        title: pick(locale, data.title, data.titleEn) ?? slug,
+        theme,
+        image: filled(data.image) ?? '',
+        gallery: (data.gallery ?? []).filter((img): img is string => Boolean(img)),
+        year: filled(data.year),
+        dimensions: filled(data.dimensions),
+        technique: filled(data.technique),
+        description: pick(locale, data.description, data.descriptionEn),
+        featured: Boolean(data.featured),
+        isThemeCover: Boolean(data.isThemeCover),
+        /* Champ « Ordre d'affichage » du CMS : vide = après les numérotées. */
+        order: orderOf(data.order),
+        /* Absent du YAML (avant la case « Afficher ») = visible. */
+        visible: data.visible !== false,
+      };
+      return work.visible ? work : null;
+    })
+    .filter((work): work is Work => work !== null)
     .sort((a, b) => {
       /* 1. ordre manuel du CMS, 2. année la plus récente, 3. titre. */
       const editorial = byEditorialOrder(a, b);
@@ -564,6 +599,32 @@ export async function getWorks(locale: Locale = 'fr'): Promise<Work[]> {
       if (yearB !== yearA) return yearB - yearA;
       return a.title.localeCompare(b.title, sortLocale);
     });
+}
+
+/**
+ * Lit une référence d'œuvre du CMS : « thème/slug » (format actuel), objet
+ * `{ work }`, ancien objet `{ theme, slug }` ou slug seul — pour ne jamais
+ * casser un contenu en attente de mise à jour.
+ */
+function parseWorkRef(value: unknown): HeroSlideRef | null {
+  if (value && typeof value === 'object') {
+    const item = value as { work?: unknown; theme?: unknown; slug?: unknown };
+    if (typeof item.work === 'string') return splitWorkRef(item.work);
+    const slug = typeof item.slug === 'string' ? item.slug.trim() : '';
+    const theme = typeof item.theme === 'string' ? item.theme.trim() : '';
+    return slug ? { theme, slug } : null;
+  }
+  if (typeof value === 'string') return splitWorkRef(value);
+  return null;
+}
+
+/** Découpe une clé « thème/slug » (sans slash = slug seul, thème inconnu). */
+function splitWorkRef(value: string): HeroSlideRef | null {
+  const trimmed = value.trim();
+  if (trimmed.length === 0) return null;
+  const slash = trimmed.indexOf('/');
+  if (slash === -1) return { theme: '', slug: trimmed };
+  return { theme: trimmed.slice(0, slash), slug: trimmed.slice(slash + 1) };
 }
 
 export async function getHomepage(locale: Locale = 'fr'): Promise<Homepage> {
@@ -585,26 +646,13 @@ export async function getHomepage(locale: Locale = 'fr'): Promise<Homepage> {
   if (!entry) return fallback;
 
   /*
-   * Carrousel du haut de page : Keystatic enregistre des objets `{ theme, slug }`.
-   * La sélection du bas de page reste une simple liste de slugs.
+   * Carrousel et sélection : Keystatic enregistre des références « thème/slug »
+   * (listes déroulantes). Les anciens formats (`{ theme, slug }`, slug seul)
+   * restent lus pour ne jamais casser un contenu en attente de mise à jour.
    */
-  const rawSlides = Array.isArray(entry.heroSlides) ? entry.heroSlides : [];
-  const heroSlides = rawSlides
-    .map((item): HeroSlideRef | null => {
-      if (item && typeof item === 'object') {
-        const theme =
-          typeof (item as { theme?: unknown }).theme === 'string'
-            ? String((item as { theme?: unknown }).theme).trim()
-            : '';
-        const slug =
-          typeof (item as { slug?: unknown }).slug === 'string'
-            ? String((item as { slug?: unknown }).slug).trim()
-            : '';
-        return slug ? { theme, slug } : null;
-      }
-      return null;
-    })
-    .filter((item): item is HeroSlideRef => item !== null);
+  const heroSlides = (Array.isArray(entry.heroSlides) ? entry.heroSlides : [])
+    .map(parseWorkRef)
+    .filter((ref): ref is HeroSlideRef => ref !== null);
 
   return {
     heroTitle: pick(locale, entry.heroTitle, entry.heroTitleEn) ?? fallback.heroTitle,
@@ -616,7 +664,9 @@ export async function getHomepage(locale: Locale = 'fr'): Promise<Homepage> {
     heroCaption: pick(locale, entry.heroCaption, entry.heroCaptionEn),
     introTitle: pick(locale, entry.introTitle, entry.introTitleEn),
     introText: pick(locale, entry.introText, entry.introTextEn),
-    selection: (entry.selection ?? []).filter((slug): slug is string => Boolean(slug)),
+    selection: (Array.isArray(entry.selection) ? entry.selection : [])
+      .map(parseWorkRef)
+      .filter((ref): ref is HeroSlideRef => ref !== null),
     worksLinkLabel:
       pick(locale, entry.worksLinkLabel, entry.worksLinkLabelEn) ?? fallback.worksLinkLabel,
   };

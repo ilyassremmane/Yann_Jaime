@@ -29,7 +29,9 @@ const [homepage, works, settings] = await Promise.all([
 
 /** Œuvres cochées « Sélection d'œuvres » dans Keystatic, montrées en entier. */
 const selected = homepage.selection
-  .map((slug) => works.find((work) => work.slug === slug))
+  .map((ref) =>
+    works.find((work) => work.slug === ref.slug && (!ref.theme || work.theme === ref.theme))
+  )
   .filter((work): work is NonNullable<typeof work> => Boolean(work));
 
 const highlight = selected.length > 0 ? selected : works.filter((work) => work.featured).slice(0, 6);

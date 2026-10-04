@@ -6,9 +6,9 @@
   "description": "Portfolio en Astro SSG de l'artiste peintre Yann Jaime — série Tours Nuages, intérieurs, architectures et figures",
   "scripts": {
     "dev": "astro dev",
-    "predev": "node scripts/compress-uploads.js",
+    "predev": "node scripts/remove-orphan-works.js && node scripts/build-cms-index.js && node scripts/compress-uploads.js",
     "build": "astro build",
-    "prebuild": "node scripts/compress-uploads.js",
+    "prebuild": "node scripts/remove-orphan-works.js && node scripts/build-cms-index.js && node scripts/compress-uploads.js",
     "build:static": "KEYSTATIC_DISABLED=1 astro build",
     "preview": "astro preview",
     "sync": "astro sync",
@@ -17,7 +17,9 @@
     "images:optimize": "node scripts/optimize-images.js",
     "images:safety": "node scripts/compress-uploads.js",
     "images:logo": "node scripts/optimize-logo.mjs",
-    "content:seed": "node scripts/seed-content.mjs"
+    "content:seed": "node scripts/seed-content.mjs",
+    "content:cleanup": "node scripts/remove-orphan-works.js",
+    "content:index": "node scripts/build-cms-index.js"
   },
   "dependencies": {
     "@astrojs/node": "^9.5.5",

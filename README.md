@@ -35,6 +35,8 @@ les modifications sont écrites directement dans les fichiers du projet).
 | `npm run images:optimize` | Source → WebP (1920 px, qualité 80) + vignettes |
 | `npm run content:seed` | Crée les fiches d’œuvres depuis le manifeste d’images |
 | `npm run content:seed -- --force` | Réécrit toutes les fiches (⚠️ écrase les textes saisis) |
+| `npm run content:index` | Régénère l’index du catalogue lu par le CMS (auto à `dev`/`build`) |
+| `npm run content:cleanup` | Supprime les fiches et photos des thèmes supprimés (auto à `dev`/`build`) |
 
 ---
 
@@ -89,8 +91,18 @@ L’artiste gère tout son site sans toucher au code :
 
 > **Rangement des œuvres** : le thème est donné par le dossier de la fiche
 > (`src/content/works/<thème>/<slug>.yaml`, une collection Keystatic par thème) et les
-> images de l'œuvre vivent dans `public/images/works/<thème>/<slug>/`. Ajouter un thème
-> demande donc d'ajouter la collection correspondante dans `keystatic.config.ts`.
+> images de l'œuvre vivent dans `public/images/works/<thème>/<slug>/`.
+>
+> **Créer ou supprimer un thème suffit** : `keystatic.config.ts` génère une
+> collection « Œuvres — <thème> » et sa page publique pour chaque thème présent
+> dans `src/content/themes/`. Supprimer un thème retire sa collection ; ses fiches
+> et ses photos orphelines sont effacées au démarrage ou au build suivant par
+> `npm run content:cleanup`.
+>
+> L'index `src/data/cms-index.json` (résumé slug/thème/titre) est régénéré à chaque
+> `predev` et `prebuild` par `npm run content:index` ; il alimente les collections
+> et les listes déroulantes de l'accueil sans ralentir le CMS. Après un ajout
+> massif d'œuvres en local, relancer `npm run dev` suffit.
 
 ### Mode « local » (développement) — actif par défaut
 
