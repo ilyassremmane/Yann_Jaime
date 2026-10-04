@@ -2,6 +2,8 @@ heroTitle: Yann Jaime
 heroMediaType: image
 heroImage: /images/home/heroImage.webp
 heroSlides:
+  - theme: grands-parents
+    slug: absorbed-by-the-architecture
   - theme: arch-fenetres-tours-nuages
     slug: paradise-en-cours
   - theme: nature-morte
