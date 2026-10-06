@@ -7,6 +7,7 @@ import sitemap from '@astrojs/sitemap';
 import keystatic from '@keystatic/astro';
 import node from '@astrojs/node';
 import netlify from '@astrojs/netlify';
+import { cmsIndexWatcher } from './scripts/cms-index-watcher';
 
 // SSG : pages publiques en HTML pur. /keystatic et son API restent rendus
 // à la demande (adapter Node). Variante 100 % statique : npm run build:static
@@ -29,6 +30,9 @@ export default defineConfig({
   compressHTML: true,
   build: {
     inlineStylesheets: 'auto',
+  },
+  vite: {
+    plugins: [cmsIndexWatcher()],
   },
   integrations: [
     ...(withoutAdmin ? [] : [keystatic()]),
