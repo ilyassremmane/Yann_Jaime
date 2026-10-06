@@ -8,35 +8,17 @@ import keystatic from '@keystatic/astro';
 import node from '@astrojs/node';
 import netlify from '@astrojs/netlify';
 
-/**
- * Le site public est généré en statique (SSG) : toutes les pages /oeuvres,
- * /a-propos, /contact sont du HTML pur au build.
- *
- * L'interface d'administration Keystatic (/keystatic) et son API ont besoin
- * d'être rendues à la demande : un adapter Node est donc déclaré.
- * Pour un hébergement 100 % statique (sans interface d'administration) :
- *   npm run build:static
- */
+// SSG : pages publiques en HTML pur. /keystatic et son API restent rendus
+// à la demande (adapter Node). Variante 100 % statique : npm run build:static
 const withoutAdmin = process.env.KEYSTATIC_DISABLED === '1';
-/*
- * Choix de l'adapter selon la plateforme :
- *  - Netlify (env NETLIFY=true) : @astrojs/netlify expose les routes à la
- *    demande (/keystatic, /api/keystatic) en Netlify Functions.
- *  - Ailleurs : serveur Node standalone (`node dist/server/entry.mjs`).
- */
+// Netlify → Functions dédiées ; ailleurs → serveur Node standalone.
 const onNetlify = process.env.NETLIFY === 'true';
 const adapter = onNetlify ? netlify() : node({ mode: 'standalone' });
 
 // https://astro.build/config
 export default defineConfig({
-  // URL publique de production (doit matcher BaseLayout.SITE)
   site: 'https://www.yannjaime.com',
-  /*
-   * Bilinguisme du site :
-   *  - français : à la racine (`/`, `/oeuvres`, …) — langue par défaut ;
-   *  - anglais  : sous le préfixe `/en/…`.
-   * Les URL françaises ne changent donc pas (bon pour le référencement).
-   */
+  // FR à la racine, EN sous /en/ (les URL françaises ne changent pas).
   i18n: {
     defaultLocale: 'fr',
     locales: ['fr', 'en'],
@@ -49,13 +31,8 @@ export default defineConfig({
     inlineStylesheets: 'auto',
   },
   integrations: [
-    // CMS : interface d'administration sur /keystatic
     ...(withoutAdmin ? [] : [keystatic()]),
-    /*
-     * L'interface de Keystatic est une application React (îlot `client:only="react"`).
-     * Sans cette intégration, Astro ne trouve pas de renderer React et l'îlot ne
-     * s'hydrate pas (page blanche) — les îlots Vue du site restent inchangés.
-     */
+    // Requis par l'îlot React de Keystatic (les îlots Vue restent inchangés).
     react(),
     vue(),
     tailwind({

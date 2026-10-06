@@ -6,9 +6,8 @@ import keystaticConfig from '../../keystatic.config';
 import type { Locale } from './i18n';
 
 /**
- * Thèmes de référence : ordre et libellés de repli si la collection « Thèmes »
- * du CMS est vide. Une valeur = le nom du fichier dans `src/content/themes/` ;
- * les thèmes créés dans Keystatic sont lus directement dans ce dossier.
+ * Thèmes : ordre + libellés de repli si la collection « Thèmes » est vide.
+ * Une valeur = le nom du fichier dans `src/content/themes/`.
  */
 const THEMES = [
   { value: 'espaces-habites', label: 'Espaces habités', labelEn: 'Inhabited Spaces' },
@@ -25,7 +24,7 @@ type ThemeValue = (typeof THEMES)[number]['value'];
 /* Thèmes                                                              */
 /* ------------------------------------------------------------------ */
 
-/** Thème : titre + accroche + couverture, géré dans Keystatic (« Thèmes »). */
+/** Thème : titre + accroche + couverture (« Thèmes » dans Keystatic). */
 export type Theme = {
   slug: string;
   title: string;
@@ -38,31 +37,26 @@ export type Theme = {
   visible: boolean;
 };
 
-/**
- * Couvertures historiques : dernier repli quand le thème n'a ni image
- * téléversée ni œuvre cochée « Couverture du thème ».
- */
+/** Couvertures historiques : dernier repli quand le thème n'a ni image ni œuvre « couverture ». */
 const FALLBACK_COVERS: Record<string, string> = {
   'espaces-habites': '/images/works/espaces-habites/paradise-en-cours/paradise-en-cours.webp',
   bath: '/images/works/bath/bains/bains.webp',
-  flashback: '/images/works/flashback/autoroute/autoroute.webp',
+  flashback: '/images/works/flashback/autoroute/image.webp',
   nature: '/images/works/nature/foret/foret.webp',
   'nature-morte': '/images/works/nature-morte/breakfast-2/breakfast-2.webp',
   portrait: '/images/works/portrait/em-portrait/em-portrait.webp',
 };
 
 /**
- * « Ordre d'affichage » saisi dans Keystatic : un numéro de position, ou rien.
- * Tout ce qui n'est pas un nombre exploitable (champ vide, ancien YAML) = non ordonné.
+ * « Ordre d'affichage » du CMS : un nombre, ou rien (champ vide, ancien YAML).
  */
 function orderOf(value: unknown): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
 /**
- * Comparateur d'ordre éditorial : les entrées numérotées passent d'abord,
- * dans l'ordre croissant ; les autres sont renvoyées à la fin (null = « pas
- * d'avis », le tri enchaîne alors sur l'ordre par défaut de la liste).
+ * Tri éditorial : les entrées numérotées d'abord (ordre croissant),
+ * les autres à la fin (tri par défaut ensuite).
  */
 function byEditorialOrder(a: { order: number | null }, b: { order: number | null }): number | null {
   if (a.order === null && b.order === null) return null;
@@ -71,10 +65,7 @@ function byEditorialOrder(a: { order: number | null }, b: { order: number | null
   return a.order - b.order || null;
 }
 
-/**
- * Tous les thèmes : entrées du CMS quand elles existent, sinon repli
- * historique (même ordre que THEMES) pour ne jamais perdre une série.
- */
+/** Tous les thèmes : CMS quand il existe, sinon repli historique. */
 export async function getThemes(locale: Locale = 'fr'): Promise<Theme[]> {
   let entries: { slug: string; entry: Record<string, unknown> }[] = [];
   try {
@@ -127,11 +118,8 @@ export async function getThemes(locale: Locale = 'fr'): Promise<Theme[]> {
 }
 
 /**
- * Couverture d'un thème depuis le CMS :
- * 1. image de couverture téléversée,
- * 2. sinon image de l'œuvre cochée « Couverture du thème »,
- * 3. sinon image de la première œuvre du thème,
- * 4. sinon visuel historique.
+ * Couverture d'un thème : image téléversée → œuvre « couverture » →
+ * première œuvre → visuel historique.
  */
 export async function themeCover(
   theme: { slug: string; cover: string | null },
@@ -154,13 +142,13 @@ export async function getTheme(slug: string, locale: Locale = 'fr'): Promise<The
   return themes.find((theme) => theme.slug === slug) ?? null;
 }
 
-/** Lecteur de contenu Keystatic : lit les fichiers de src/content au build. */
+/** Lecteur Keystatic : lit les fichiers de src/content au build. */
 export const reader = createReader(process.cwd(), keystaticConfig);
 
 export type Work = {
   slug: string;
   title: string;
-  /** Thème de l'œuvre : le dossier (et donc la collection) où elle est rangée. */
+  /** Thème = dossier (et collection) de rangement de l'œuvre. */
   theme: string;
   image: string;
   gallery: string[];
@@ -169,11 +157,11 @@ export type Work = {
   technique: string | null;
   description: string | null;
   featured: boolean;
-  /** Vrai = œuvre choisie pour couvrir la carte de son thème sur /oeuvres. */
+  /** Vrai = couvre la carte de son thème sur /oeuvres. */
   isThemeCover: boolean;
   /** « Ordre d'affichage » saisi dans Keystatic (null = non numérotée). */
   order: number | null;
-  /** Faux = œuvre masquée sur le site public (case « Afficher » du CMS). */
+  /** Faux = masquée sur le site public (case « Afficher » du CMS). */
   visible: boolean;
 };
 
@@ -192,14 +180,14 @@ export type Settings = {
   copyright: string;
 };
 
-/** Référencement global, géré dans le singleton Keystatic « Paramètres SEO ». */
+/** Référencement global (singleton « Paramètres SEO »). */
 export type Seo = {
   siteTitle: string;
   metaDescription: string;
   shareImage: string | null;
 };
 
-/** Exposition : lieu + dates + photos d'accrochage (collection séparée des œuvres). */
+/** Exposition : lieu + dates + photos d'accrochage. */
 export type Exposition = {
   slug: string;
   title: string;
@@ -250,9 +238,8 @@ export type Homepage = {
 };
 
 /**
- * Référence à une œuvre saisie dans Keystatic (carrousel et sélection de la
- * page d’accueil) : « thème/slug » dans le CMS. Le site résout ensuite chaque
- * référence vers la fiche réelle (titre, image, URL).
+ * Référence à une œuvre dans l'accueil (« thème/slug »). Le site résout
+ * ensuite chaque référence vers la fiche réelle (titre, image, URL).
  */
 export type HeroSlideRef = {
   /** Dossier du thème ; chaîne vide = ancien format « slug seul ». */
@@ -279,7 +266,7 @@ export type About = {
   training: string[];
   experience: string[];
   contactIntro: string | null;
-  /** Documents téléchargeables (PDF) — affichés avant le bloc contact. */
+  /** Documents PDF affichés avant le bloc contact. */
   portfolioPdf: string | null;
   cvPdf: string | null;
 };
@@ -333,9 +320,8 @@ function filled(value: string | null | undefined): string | null {
 }
 
 /**
- * Choisit le texte de la langue demandée, avec repli systématique sur le
- * français : l'artiste remplit l'anglais champ par champ, sans jamais casser
- * la version anglaise du site (un champ vide = texte français affiché).
+ * Choisit le texte de la langue demandée, avec repli sur le français :
+ * un champ anglais vide = texte français affiché.
  */
 function pick(
   locale: Locale,
@@ -375,10 +361,8 @@ export async function themeTitle(value: string, locale: Locale = 'fr'): Promise<
 }
 
 /**
- * Version légère (vignette) d'une image de grille.
- * `npm run images:optimize` produit les vignettes dans
- * `public/images/works/thumbs/…` et `public/images/expositions/thumbs/…` ;
- * on y renvoie si elles existent.
+ * Version légère (vignette) d'une image de grille, si elle existe dans
+ * `public/images/works/thumbs/…` ou `public/images/expositions/thumbs/…`.
  */
 export function thumbFor(image: string): string {
   const match = image.match(/^\/images\/(works|expositions)\/(.+)$/);
@@ -411,14 +395,9 @@ type ManifestEntry = { file?: string; width?: number; height?: number };
 type ImageDimensions = { width: number; height: number };
 
 /**
- * Dimensions réelles des images optimisées, lues dans les manifestes de
- * `npm run images:optimize`. Elles alimentent les attributs `width`/`height`
- * (pas de saut de mise en page — bon pour le référencement et l'affichage).
- *
- * Deux index : par chemin public exact, puis par nom de fichier. Le second
- * sert de repli quand l'image est référencée depuis un autre dossier que celui
- * du manifeste (fiches d'œuvres, couvertures, partage…), le nom de fichier
- * étant unique au sein d'une famille d'images.
+ * Dimensions réelles des images (manifestes), pour les attributs
+ * `width`/`height` (pas de saut de mise en page). Index par chemin exact,
+ * puis par nom de fichier en repli.
  */
 const IMAGE_SIZES: {
   byPath: Map<string, ImageDimensions>;
@@ -486,10 +465,7 @@ export function artworkSize(
 /* Lecture des contenus                                                */
 /* ------------------------------------------------------------------ */
 
-/**
- * Référencement global (singleton « Paramètres SEO ») : titre affiché dans Google,
- * description d'accroche et image de partage, avec repli français/anglais.
- */
+/** Référencement global (« Paramètres SEO »), avec repli français/anglais. */
 export async function getSeo(locale: Locale = 'fr'): Promise<Seo> {
   const entry = await reader.singletons.seo.read().catch(() => null);
 
@@ -548,12 +524,9 @@ type WorkYaml = {
 };
 
 /**
- * Toutes les œuvres, de la plus récente à la plus ancienne.
- *
- * Le thème d'une œuvre est donné par son dossier
- * (`src/content/works/<thème>/<œuvre>.yaml`, déclaré en glob dans
- * `src/content.config.ts`) : créer un thème dans Keystatic suffit pour que
- * ses œuvres soient lues ici, sans réglage supplémentaire.
+ * Toutes les œuvres, de la plus récente à la plus ancienne. Le thème d'une
+ * œuvre = son dossier (`src/content/works/<thème>/`), donc créer un thème
+ * suffit pour que ses œuvres soient lues ici.
  */
 export async function getWorks(locale: Locale = 'fr'): Promise<Work[]> {
   const sortLocale = locale === 'en' ? 'en' : 'fr';
@@ -606,11 +579,7 @@ export async function getWorks(locale: Locale = 'fr'): Promise<Work[]> {
     });
 }
 
-/**
- * Lit une référence d'œuvre du CMS : « thème/slug » (format actuel), objet
- * `{ work }`, ancien objet `{ theme, slug }` ou slug seul — pour ne jamais
- * casser un contenu en attente de mise à jour.
- */
+/** Lit une référence d'œuvre du CMS : « thème/slug » (ou ancien format objet). */
 function parseWorkRef(value: unknown): HeroSlideRef | null {
   if (value && typeof value === 'object') {
     const item = value as { work?: unknown; theme?: unknown; slug?: unknown };
@@ -623,7 +592,7 @@ function parseWorkRef(value: unknown): HeroSlideRef | null {
   return null;
 }
 
-/** Découpe une clé « thème/slug » (sans slash = slug seul, thème inconnu). */
+/** Découpe une clé « thème/slug » (sans slash = slug seul). */
 function splitWorkRef(value: string): HeroSlideRef | null {
   const trimmed = value.trim();
   if (trimmed.length === 0) return null;

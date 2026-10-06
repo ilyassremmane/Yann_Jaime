@@ -14,10 +14,7 @@
     "sync": "astro sync",
     "check": "astro check",
     "astro": "astro",
-    "images:optimize": "node scripts/optimize-images.js",
     "images:safety": "node scripts/compress-uploads.js",
-    "images:logo": "node scripts/optimize-logo.mjs",
-    "content:seed": "node scripts/seed-content.mjs",
     "content:cleanup": "node scripts/remove-orphan-works.js",
     "content:index": "node scripts/build-cms-index.js"
   },

@@ -22,22 +22,17 @@ const DOCS_DIR = 'public/documents/about';
 const DOCS_URL = '/documents/about';
 
 /**
- * Stockage du contenu : écriture directe dans les fichiers en développement,
- * commits GitHub (dépôt ci-dessous) dans les builds de production.
- *
- * `import.meta.env.DEV` est remplacé statiquement par Vite — `true` sur le serveur
- * de développement, `false` au build. On évite `process.env` : ce fichier est aussi
- * chargé dans le navigateur par l'administration, où `process` n'existe pas.
+ * Stockage : fichiers locaux en dev, commits GitHub en production.
+ * `import.meta.env.DEV` (pas `process.env`) car ce fichier est aussi chargé
+ * dans le navigateur par l'administration.
  */
 const GITHUB_REPO = 'ilyassremmane/Yann_Jaime';
 
 /**
- * Schéma commun aux collections d'œuvres (une par thème, générées ci-dessus).
- *
- * Le dossier d'images est propre au thème : l'administration Keystatic y ajoute
- * le nom de l'œuvre, soit `public/images/works/<thème>/<œuvre>/<fichier>`.
- * La couverture d'un thème est désignée depuis une œuvre (`isThemeCover`) : une
- * relation unique ne peut pas viser plusieurs collections à la fois.
+ * Schéma commun aux collections d'œuvres (une par thème).
+ * Les images d'une fiche sont rangées dans `public/images/works/<thème>/<œuvre>/`.
+ * La couverture d'un thème est désignée depuis une œuvre (`isThemeCover`) :
+ * une relation unique ne peut pas viser plusieurs collections à la fois.
  */
 function worksSchema(theme: string) {
   const directory = `${WORKS_DIR}/${theme}`;
@@ -125,23 +120,15 @@ function worksSchema(theme: string) {
 /* ------------------------------------------------------------------ */
 /* Collections dynamiques : une collection « Œuvres » par thème        */
 /* ------------------------------------------------------------------ */
-/* Les thèmes sont lus dans `src/content/themes/*.yaml` au chargement de la
-   configuration :
-   - créer un thème fait apparaître sa collection « Œuvres — … », sa entrée
-     de navigation et sa page publique ;
-   - supprimer un thème fait disparaître tout cela (les fiches orphelines
-     sont ensuite effacées du dépôt par `scripts/remove-orphan-works.js`,
-     lancé à chaque `predev` / `prebuild`). */
+/* Une collection « Œuvres » par thème (lus dans src/content/themes/*.yaml) :
+   créer un thème crée sa collection, sa navigation et sa page ; le supprimer
+   les fait disparaître (les fiches orphelines sont effacées par
+   `scripts/remove-orphan-works.js` à chaque dev/build). */
 
 /**
  * Index du catalogue (thèmes + œuvres), produit par `scripts/build-cms-index.js`
- * à chaque `predev` / `prebuild`. La configuration Keystatic est chargée par
- * Vite ET par l'API d'administration : importer ici les ~80 fichiers YAML du
- * catalogue rendait la page d'administration inutilisable (blocage du serveur).
- * Un index unique, relu par le CMS, évite ce problème.
- *
- * À jour après l'ajout d'une œuvre ou d'un thème : relancer `npm run dev` ou
- * `npm run build` (ou `npm run content:index`).
+ * à chaque dev/build. Importer les ~80 YAML du catalogue ici rendait la page
+ * d'administration inutilisable : un index unique évite ce blocage.
  */
 /** Index lu tel quel : Vite transforme déjà le JSON en objet. */
 const cmsIndex = cmsIndexRaw as {
@@ -155,9 +142,8 @@ const themes = cmsIndex.themes;
 const themeTitleBySlug = new Map(themes.map((theme) => [theme.slug, theme.title]));
 
 /**
- * Une collection « Œuvres » par thème, portée par le nom de son dossier.
- * L'index `string` est requis par le type `Collections` de Keystatic ; les
- * clés réelles (`works-<slug du thème>`) sont produites à l'exécution.
+ * Une collection « Œuvres » par thème. L'index `string` est requis par le type
+ * `Collections` de Keystatic ; les clés réelles sont produites à l'exécution.
  */
 const worksCollections: Record<string, Collection<Record<string, any>, string>> =
   Object.fromEntries(
@@ -177,10 +163,7 @@ const worksCollections: Record<string, Collection<Record<string, any>, string>> 
 
 type WorkOption = { label: string; value: string; rank: number; title: string };
 
-/**
- * Liste déroulante de toutes les œuvres (valeur « thème/slug »), classées par
- * thème puis par titre : sert au carrousel et à la sélection de l'accueil.
- */
+/** Liste déroulante de toutes les œuvres (« thème/slug »), pour l'accueil. */
 const workOptions: WorkOption[] = cmsIndex.works.map((work) => ({
   label: `${work.title} — ${themeTitleBySlug.get(work.theme) ?? work.theme}`,
   value: work.value,
@@ -290,17 +273,13 @@ export default config({
     /* ---------------------------------------------------------------- */
     /* ŒUVRES                                                           */
     /* ---------------------------------------------------------------- */
-    /* Une collection par thème, générée depuis src/content/themes/ :
-       créer un thème dans « Thèmes » crée sa collection « Œuvres — … » et
-       son entrée de navigation. Keystatic range les images d'une fiche dans
-       le dossier de son thème, soit public/images/works/<thème>/<œuvre>/. */
+    /* Une collection par thème (générée depuis src/content/themes/). */
     ...worksCollections,
 
     /* ---------------------------------------------------------------- */
     /* EXPOSITIONS                                                      */
     /* ---------------------------------------------------------------- */
-    /* Vues d'accrochage, rattachées à un lieu et à des dates — jamais
-       mélangées aux œuvres. */
+    /* Vues d'accrochage — jamais mélangées aux œuvres. */
     expositions: collection({
       label: 'Expositions',
       slugField: 'title',

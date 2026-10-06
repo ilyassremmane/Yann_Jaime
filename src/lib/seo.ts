@@ -1,9 +1,9 @@
 /**
  * Données structurées (schema.org / JSON-LD) et repères de référencement.
  * ---------------------------------------------------------------------
- * Les URL sont toujours construites à partir de l'URL de production déclarée
- * dans astro.config.mjs (`site`), reprise par BaseLayout via import.meta.env.SITE :
- * un seul endroit à modifier le jour où le domaine change.
+ * Les URL sont toujours construites à partir de l'URL de production (`site`
+ * dans astro.config.mjs), reprise par BaseLayout : un seul endroit à
+ * modifier le jour où le domaine change.
  *
  * Types utilisés (vérifiés dans le vocabulaire schema.org) :
  *   Person          → l'artiste (schema.org ne définit pas de type « Artist »)
