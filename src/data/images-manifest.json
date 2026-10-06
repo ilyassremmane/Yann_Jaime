@@ -134,7 +134,7 @@
   {
     "theme": "espaces-habites",
     "source": "04_TABLEAU_FEUILLES_02.jpg",
-    "file": "/images/works/espaces-habites/tableau-feuilles-02/tableau-feuilles-02.webp",
+    "file": "/images/works/espaces-habites/tableau-feuilles-02/image.webp",
     "thumb": "/images/works/thumbs/espaces-habites/tableau-feuilles-02/tableau-feuilles-02.webp",
     "width": 1920,
     "height": 2651,
@@ -290,7 +290,7 @@
   {
     "theme": "flashback",
     "source": "AUTOROUTE.jpg",
-    "file": "/images/works/flashback/autoroute/autoroute.webp",
+    "file": "/images/works/flashback/autoroute/image.webp",
     "thumb": "/images/works/thumbs/flashback/autoroute/autoroute.webp",
     "width": 1920,
     "height": 1521,
@@ -298,18 +298,6 @@
     "srcWidth": 2855,
     "srcHeight": 2261,
     "srcBytes": 1973607
-  },
-  {
-    "theme": "flashback",
-    "source": "COUPLE_CROP.jpg",
-    "file": "/images/works/flashback/couple-crop/couple-crop.webp",
-    "thumb": "/images/works/thumbs/flashback/couple-crop/couple-crop.webp",
-    "width": 700,
-    "height": 483,
-    "bytes": 76400,
-    "srcWidth": 700,
-    "srcHeight": 483,
-    "srcBytes": 126359
   },
   {
     "theme": "flashback",
@@ -334,18 +322,6 @@
     "srcWidth": 3713,
     "srcHeight": 1651,
     "srcBytes": 2014344
-  },
-  {
-    "theme": "flashback",
-    "source": "ESCALIER_GRAND.HEIC",
-    "file": "/images/works/flashback/escalier-grand/escalier-grand.webp",
-    "thumb": "/images/works/thumbs/flashback/escalier-grand/escalier-grand.webp",
-    "width": 1920,
-    "height": 2560,
-    "bytes": 387020,
-    "srcWidth": 2104,
-    "srcHeight": 2805,
-    "srcBytes": 870280
   },
   {
     "theme": "flashback",

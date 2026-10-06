@@ -196,9 +196,13 @@ for (const family of FAMILIES) {
 
       const needCompress = (meta.width ?? 0) > MAX_WIDTH || size > MAX_BYTES;
       const needThumb = !existsSync(path.join(root, 'thumbs', relInFamily));
+      /* Image renommée par l'artiste (nouveau fichier) : le manifeste doit
+         la prendre en compte, sans quoi width/height tomberont en repli. */
+      const hasManifestEntry = manifest.some((item) => item?.file === publicPath);
 
-      /* Rien à faire, sauf si le manifeste doit suivre une conversion. */
-      if (!needCompress && !needThumb && !legacyPublicPath) {
+      /* Rien à faire, sauf si le manifeste doit suivre une conversion ou
+         si l'image n'y figure pas encore. */
+      if (!needCompress && !needThumb && !legacyPublicPath && hasManifestEntry) {
         untouched += 1;
         continue;
       }
