@@ -306,7 +306,7 @@ export default config({
       slugField: 'title',
       path: 'src/content/expositions/*',
       format: { data: 'yaml' },
-      columns: ['title', 'location', 'year'],
+      columns: ['title', 'location', 'year', 'order'],
       entryLayout: 'content',
       schema: {
         title: fields.slug({
@@ -341,7 +341,13 @@ export default config({
         }),
         year: fields.text({
           label: 'Année',
-          description: 'Sert à classer les expositions, de la plus récente à la plus ancienne.',
+          description:
+            'Classe automatiquement les expositions sans numéro, de la plus récente à la plus ancienne.',
+        }),
+        order: fields.number({
+          label: 'Position d’affichage (facultatif)',
+          description:
+            '1 = première exposition de la liste. Les expositions numérotées passent devant les autres, dans l’ordre choisi ; laissez vide pour conserver le classement par année.',
         }),
         cover: fields.image({
           label: 'Photo de couverture',
@@ -538,6 +544,18 @@ export default config({
         bioVideoCaption: fields.text({
           label: 'Vidéo — légende (facultatif)',
           description: 'Courte légende affichée sous la vidéo.',
+        }),
+        videoCredit: fields.text({
+          label: 'Vidéo — mention de réalisation (facultatif)',
+          description:
+            'Crédit affiché juste sous la vidéo, ex. « Réalisation : U2PI Studio ». Laissez vide pour ne rien afficher.',
+          defaultValue: 'Réalisation : U2PI Studio',
+        }),
+        videoCreditUrl: fields.url({
+          label: 'Vidéo — lien de la mention (facultatif)',
+          description:
+            'Page du studio cité (ex. son Instagram) : la mention devient un lien cliquable.',
+          defaultValue: 'https://www.instagram.com/u2pi.studio/',
         }),
         bio: fields.text({
           label: 'Biographie',

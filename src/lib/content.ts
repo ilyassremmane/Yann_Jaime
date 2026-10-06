@@ -208,6 +208,8 @@ export type Exposition = {
   city: string | null;
   dates: string | null;
   year: string | null;
+  /** « Position d'affichage » saisie dans Keystatic (null = non numérotée). */
+  order: number | null;
   cover: string;
   gallery: string[];
   description: string | null;
@@ -266,6 +268,9 @@ export type About = {
   bioVideoWebm: string | null;
   bioVideoPoster: string | null;
   bioVideoCaption: string | null;
+  /** Crédit de réalisation affiché sous la vidéo (texte + lien cliquable). */
+  videoCredit: string | null;
+  videoCreditUrl: string | null;
   bio: string;
   quote: string | null;
   cvTitle: string;
@@ -691,6 +696,8 @@ export async function getAbout(locale: Locale = 'fr'): Promise<About> {
     bioVideoWebm: null,
     bioVideoPoster: null,
     bioVideoCaption: null,
+    videoCredit: null,
+    videoCreditUrl: null,
   };
 
   const entry = await reader.singletons.about.read();
@@ -709,6 +716,8 @@ export async function getAbout(locale: Locale = 'fr'): Promise<About> {
     bioVideoWebm: filled(entry.bioVideoWebm),
     bioVideoPoster: filled(entry.bioVideoPoster),
     bioVideoCaption: filled(entry.bioVideoCaption),
+    videoCredit: filled(entry.videoCredit),
+    videoCreditUrl: filled(entry.videoCreditUrl),
     bio: pick(locale, entry.bio, entry.bioEn) ?? '',
     quote: pick(locale, entry.quote, entry.quoteEn),
     cvTitle: pick(locale, entry.cvTitle, entry.cvTitleEn) ?? fallback.cvTitle,
@@ -740,12 +749,17 @@ export async function getExpositions(locale: Locale = 'fr'): Promise<Exposition[
       city: filled(entry.city),
       dates: filled(entry.dates),
       year: filled(entry.year),
+      /* Champ « Position d'affichage » du CMS : vide = classement par année. */
+      order: orderOf(entry.order),
       cover: filled(entry.cover) ?? '',
       gallery: (entry.gallery ?? []).filter((img): img is string => Boolean(img)),
       description: pick(locale, entry.description, entry.descriptionEn),
       link: filled(entry.link),
     }))
     .sort((a, b) => {
+      /* 1. ordre manuel du CMS, 2. année la plus récente, 3. titre. */
+      const editorial = byEditorialOrder(a, b);
+      if (editorial !== null) return editorial;
       const yearA = Number(a.year ?? 0);
       const yearB = Number(b.year ?? 0);
       if (yearB !== yearA) return yearB - yearA;

@@ -117,6 +117,22 @@ const seoDescription = bio.length > 0 ? bio[0].slice(0, 180) : t.aboutPage.seoFa
                 <figcaption class="mt-2 text-center text-xs leading-relaxed text-clay">
                   {about.bioVideoCaption || t.aboutPage.videoLabel}
                 </figcaption>
+                {about.videoCredit && (
+                  <p class="mt-1 text-center text-xs leading-relaxed text-clay">
+                    {about.videoCreditUrl ? (
+                      <a
+                        href={about.videoCreditUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="underline underline-offset-2 transition hover:text-ink"
+                      >
+                        {about.videoCredit}
+                      </a>
+                    ) : (
+                      about.videoCredit
+                    )}
+                  </p>
+                )}
               </figure>
             )
           }

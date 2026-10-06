@@ -82,12 +82,18 @@ L’artiste gère tout son site sans toucher au code :
 
 | Contenu | Où | Champs |
 | --- | --- | --- |
-| **Collections « Œuvres »** (une par thème) | `src/content/works/<thème>/*.yaml` | Titre (slug auto), Image principale, Images secondaires, Année, Dimensions, Technique, Description (fr/en), Mise en avant, Couverture du thème, Visibilité |
-| **Thèmes** | `src/content/themes/*.yaml` | Titre, accroche, image de couverture, texte de présentation, Visibilité |
+| **Collections « Œuvres »** (une par thème) | `src/content/works/<thème>/*.yaml` | Titre (slug auto), Image principale, Images secondaires, Année, Dimensions, Technique, Description (fr/en), Mise en avant, Couverture du thème, **Ordre d’affichage**, Visibilité |
+| **Thèmes** | `src/content/themes/*.yaml` | Titre, accroche, image de couverture, texte de présentation, **Ordre d’affichage**, Visibilité |
 | **Accueil** (singleton) | `src/content/homepage/index.yaml` | Titre et sous-titre du hero, **photo ou vidéo** principale, légende, texte d’introduction, sélection d’œuvres, libellé du lien |
-| **À propos** (singleton) | `src/content/about/index.yaml` | Portrait, légende, biographie, citation, CV (expositions, prix, formations, expériences) |
+| **Expositions** | `src/content/expositions/*.yaml` | Titre, type, lieu, ville, dates, année, **position d’affichage**, couverture, photos, description, lien |
+| **À propos** (singleton) | `src/content/about/index.yaml` | Portrait, légende, biographie, citation, CV (expositions, prix, formations, expériences), vidéo + **mention de réalisation** |
 | **Paramètres globaux** (singleton) | `src/content/settings/index.yaml` | Nom du site, accroche fr/en, e-mail, téléphone, lieu, réseaux sociaux, mention de bas de page, copyright |
 | **Paramètres SEO** (singleton) | `src/content/seo/index.yaml` | Titre dans Google (fr/en), description d’accroche fr/en, image de partage |
+**Classer les contenus à la main :** dans « Thèmes », « Œuvres — … » et « Expositions », le champ
+**« Ordre d’affichage »** (ou **« Position d’affichage »** pour les expositions) accepte un numéro —
+`1` = premier de la liste. Les éléments numérotés passent devant les autres, dans l’ordre choisi ;
+laissez le champ vide pour conserver le classement automatique (thèmes : ordre historique, œuvres :
+année la plus récente, expositions : année la plus récente).
 
 > **Rangement des œuvres** : le thème est donné par le dossier de la fiche
 > (`src/content/works/<thème>/<slug>.yaml`, une collection Keystatic par thème) et les
