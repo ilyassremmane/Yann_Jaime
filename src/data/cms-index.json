@@ -113,13 +113,8 @@
       "theme": "bath"
     },
     {
-      "value": "bath/hadjim-2",
-      "title": "Hadjim 2",
-      "theme": "bath"
-    },
-    {
       "value": "bath/img-1608",
-      "title": "Sans titre",
+      "title": "Nouvelle Olympia",
       "theme": "bath"
     },
     {
@@ -135,6 +130,11 @@
     {
       "value": "bath/img-e2891",
       "title": "Sans titre",
+      "theme": "bath"
+    },
+    {
+      "value": "bath/j-arrive",
+      "title": "J'arrive",
       "theme": "bath"
     },
     {
@@ -158,11 +158,6 @@
       "theme": "bath"
     },
     {
-      "value": "flashback/absorbed-by-the-architecture",
-      "title": "Absorbed by the architecture",
-      "theme": "flashback"
-    },
-    {
       "value": "flashback/autoroute",
       "title": "Autoroute",
       "theme": "flashback"
@@ -178,13 +173,13 @@
       "theme": "flashback"
     },
     {
-      "value": "flashback/dona",
-      "title": "Dona",
+      "value": "flashback/deep-sleep",
+      "title": "deep sleep",
       "theme": "flashback"
     },
     {
-      "value": "flashback/dormir",
-      "title": "Dormir",
+      "value": "flashback/dona",
+      "title": "Dona",
       "theme": "flashback"
     },
     {

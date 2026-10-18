@@ -694,5 +694,53 @@
     "width": 700,
     "height": 483,
     "bytes": 76400
+  },
+  {
+    "theme": "bath",
+    "file": "/images/works/bath/img-1608/image.webp",
+    "thumb": "/images/works/thumbs/bath/img-1608/image.webp",
+    "width": 1920,
+    "height": 1507,
+    "bytes": 620236
+  },
+  {
+    "theme": "bath",
+    "file": "/images/works/bath/j-arrive/image.webp",
+    "thumb": "/images/works/thumbs/bath/j-arrive/image.webp",
+    "width": 1920,
+    "height": 2269,
+    "bytes": 801852
+  },
+  {
+    "theme": "espaces-habites",
+    "file": "/images/works/espaces-habites/absorbe-par-architecture/gallery/0.jpg",
+    "thumb": "/images/works/thumbs/espaces-habites/absorbe-par-architecture/gallery/0.jpg",
+    "width": 530,
+    "height": 706,
+    "bytes": 96077
+  },
+  {
+    "theme": "flashback",
+    "file": "/images/works/flashback/deep-sleep/image.webp",
+    "thumb": "/images/works/thumbs/flashback/deep-sleep/image.webp",
+    "width": 1920,
+    "height": 854,
+    "bytes": 376246
+  },
+  {
+    "theme": "flashback",
+    "file": "/images/works/flashback/dona/image.webp",
+    "thumb": "/images/works/thumbs/flashback/dona/image.webp",
+    "width": 1080,
+    "height": 1347,
+    "bytes": 349180
+  },
+  {
+    "theme": "nature-morte",
+    "file": "/images/works/nature-morte/iconic/image.webp",
+    "thumb": "/images/works/thumbs/nature-morte/iconic/image.webp",
+    "width": 1713,
+    "height": 1425,
+    "bytes": 417278
   }
 ]
